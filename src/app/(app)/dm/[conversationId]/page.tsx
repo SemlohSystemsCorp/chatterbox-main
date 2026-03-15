@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import {
   getAuthUser,
   getUserBoxes,
@@ -9,6 +10,24 @@ import {
 } from "@/lib/data";
 import { redirect } from "next/navigation";
 import { DmPageClient } from "./dm-page-client";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ conversationId: string }>;
+}): Promise<Metadata> {
+  const { conversationId } = await params;
+  const { supabase, user } = await getAuthUser();
+  const conversation = await getConversationByShortId(supabase, conversationId, user.id);
+  if (!conversation) return { title: "Message" };
+  const others = conversation.participants.filter(
+    (p: { user_id: string }) => p.user_id !== user.id
+  );
+  const name = others.length > 0
+    ? others.map((p: { full_name: string; email: string }) => p.full_name || p.email).join(", ")
+    : "Message";
+  return { title: name };
+}
 
 export default async function DmPage({
   params,

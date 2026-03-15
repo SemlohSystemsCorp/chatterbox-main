@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { InviteLandingClient } from "./invite-landing-client";
+
+export const metadata: Metadata = {
+  title: "You're invited",
+  description: "You've been invited to join a Chatterbox workspace.",
+};
 
 export default async function InvitePage({
   params,

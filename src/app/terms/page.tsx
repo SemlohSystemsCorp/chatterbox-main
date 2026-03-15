@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import {
   MarketingNav,
   MarketingFooter,
 } from "@/components/marketing/marketing-layout";
+
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description: "Terms and conditions for using the Chatterbox platform.",
+};
 
 export default function TermsPage() {
   return (

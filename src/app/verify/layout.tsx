@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { MessageSquare } from "lucide-react";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Verify email",
+  description: "Verify your email address to complete your Chatterbox account setup.",
+};
 
 export default function AuthLayout({
   children,

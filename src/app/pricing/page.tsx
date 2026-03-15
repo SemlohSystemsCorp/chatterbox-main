@@ -1,9 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, ArrowRight, Minus } from "lucide-react";
 import {
   MarketingNav,
   MarketingFooter,
 } from "@/components/marketing/marketing-layout";
+
+export const metadata: Metadata = {
+  title: "Pricing",
+  description: "Simple, transparent pricing for teams of all sizes. Start free, upgrade when you're ready.",
+};
 
 const plans = [
   {

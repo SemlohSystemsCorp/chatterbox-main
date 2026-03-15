@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import {
   getAuthUser,
   getUserBoxes,
@@ -7,6 +8,19 @@ import {
 } from "@/lib/data";
 import { redirect } from "next/navigation";
 import { BoxSettingsClient } from "./box-settings-client";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ boxId: string }>;
+}): Promise<Metadata> {
+  const { boxId } = await params;
+  const { supabase, user } = await getAuthUser();
+  const box = await getBoxByShortId(supabase, boxId, user.id);
+  return {
+    title: box ? `Settings · ${box.name}` : "Box Settings",
+  };
+}
 
 export default async function BoxSettingsPage({
   params,

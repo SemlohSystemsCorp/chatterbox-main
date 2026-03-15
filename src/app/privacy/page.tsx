@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import {
   MarketingNav,
   MarketingFooter,
 } from "@/components/marketing/marketing-layout";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description: "How Chatterbox collects, uses, and protects your personal data.",
+};
 
 export default function PrivacyPage() {
   return (

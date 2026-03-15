@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { MessageSquare } from "lucide-react";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Welcome",
+  description: "Set up your Chatterbox profile and get started.",
+};
 
 export default function OnboardingLayout({
   children,

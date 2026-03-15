@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { MessageSquare } from "lucide-react";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Log in",
+  description: "Log in to your Chatterbox account.",
+};
 
 export default function AuthLayout({
   children,

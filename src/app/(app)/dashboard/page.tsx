@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
 import { getAuthUser, getUserBoxes } from "@/lib/data";
 import { DashboardClient } from "./dashboard-client";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+};
 
 export default async function DashboardPage() {
   const { supabase, user } = await getAuthUser();

@@ -1,6 +1,20 @@
+import type { Metadata } from "next";
 import { getAuthUser, getUserBoxes, getBoxByShortId, getBoxChannels, getBoxMembers } from "@/lib/data";
 import { redirect } from "next/navigation";
 import { SherlockClient } from "./sherlock-client";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ boxId: string }>;
+}): Promise<Metadata> {
+  const { boxId } = await params;
+  const { supabase, user } = await getAuthUser();
+  const box = await getBoxByShortId(supabase, boxId, user.id);
+  return {
+    title: box ? `Sherlock · ${box.name}` : "Sherlock",
+  };
+}
 
 export default async function SherlockPage({
   params,

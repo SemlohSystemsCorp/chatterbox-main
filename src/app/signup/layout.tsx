@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { MessageSquare } from "lucide-react";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Sign up",
+  description: "Create your free Chatterbox account and start collaborating with your team.",
+};
 
 export default function AuthLayout({
   children,

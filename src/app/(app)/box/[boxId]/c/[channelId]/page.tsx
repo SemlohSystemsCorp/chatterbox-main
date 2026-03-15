@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import {
   getAuthUser,
   getUserBoxes,
@@ -12,6 +13,21 @@ import {
 } from "@/lib/data";
 import { redirect } from "next/navigation";
 import { ChannelPageClient } from "./channel-page-client";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ boxId: string; channelId: string }>;
+}): Promise<Metadata> {
+  const { boxId, channelId } = await params;
+  const { supabase, user } = await getAuthUser();
+  const box = await getBoxByShortId(supabase, boxId, user.id);
+  if (!box) return { title: "Channel" };
+  const channel = await getChannelByShortId(supabase, box.id, channelId);
+  return {
+    title: channel ? `#${channel.name} · ${box.name}` : box.name,
+  };
+}
 
 export default async function ChannelPage({
   params,

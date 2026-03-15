@@ -1,9 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import {
   MarketingNav,
   MarketingFooter,
 } from "@/components/marketing/marketing-layout";
+
+export const metadata: Metadata = {
+  title: "About",
+  description: "Learn about Chatterbox — the team behind the modern communication platform built for speed, clarity, and collaboration.",
+};
 
 const values = [
   {

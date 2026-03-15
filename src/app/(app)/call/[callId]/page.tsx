@@ -1,7 +1,12 @@
+import type { Metadata } from "next";
 import { getAuthUser } from "@/lib/data";
 import { createMeetingToken } from "@/lib/daily";
 import { redirect } from "next/navigation";
 import { CallPageClient } from "./call-page-client";
+
+export const metadata: Metadata = {
+  title: "Call",
+};
 
 export default async function CallPage({
   params,
