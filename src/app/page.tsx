@@ -366,7 +366,7 @@ export default function HomePage() {
               alt="Netflix"
               width={120}
               height={40}
-              className="h-7 w-auto opacity-40 brightness-0 invert transition-opacity hover:opacity-70"
+              className="h-9 w-auto opacity-40 brightness-0 invert transition-opacity hover:opacity-70"
               unoptimized
             />
             {/* Uber */}
@@ -375,16 +375,16 @@ export default function HomePage() {
               alt="Uber"
               width={120}
               height={40}
-              className="h-7 w-auto opacity-40 brightness-0 invert transition-opacity hover:opacity-70"
+              className="h-9 w-auto opacity-40 brightness-0 invert transition-opacity hover:opacity-70"
               unoptimized
             />
-            {/* Stripe */}
+            {/* OpenAI */}
             <Image
-              src="https://cdn.brandfetch.io/stripe.com/w/512/h/512/logo"
-              alt="Stripe"
+              src="https://cdn.brandfetch.io/openai.com/w/512/h/512/logo"
+              alt="OpenAI"
               width={120}
               height={40}
-              className="h-7 w-auto opacity-40 brightness-0 invert transition-opacity hover:opacity-70"
+              className="h-9 w-auto opacity-40 brightness-0 invert transition-opacity hover:opacity-70"
               unoptimized
             />
             {/* Anthropic */}
@@ -393,7 +393,7 @@ export default function HomePage() {
               alt="Anthropic"
               width={120}
               height={40}
-              className="h-7 w-auto opacity-40 brightness-0 invert transition-opacity hover:opacity-70"
+              className="h-9 w-auto opacity-40 brightness-0 invert transition-opacity hover:opacity-70"
               unoptimized
             />
           </div>

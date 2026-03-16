@@ -116,8 +116,13 @@ export function MarketingFooter() {
           </div>
         </div>
 
-        <div className="mt-12 border-t border-white/[0.06] pt-6 text-[12px] text-[#444]">
-          &copy; {new Date().getFullYear()} Chatterbox. All rights reserved.
+        <div className="mt-16 border-t border-white/[0.06] pt-10">
+          <p className="text-[13px] text-[#444]">
+            &copy; {new Date().getFullYear()} Chatterbox. All rights reserved.
+          </p>
+          <p className="mt-4 text-[72px] font-bold leading-none tracking-[-0.04em] text-[#1a1a1a] md:text-[96px] lg:text-[120px]">
+            Chatterbox
+          </p>
         </div>
       </div>
     </footer>
