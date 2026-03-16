@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { MessageSquare, ArrowRight, AtSign } from "lucide-react";
+import { MessageSquare, ArrowRight, AtSign, Check, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-type Step = "welcome" | "username" | "create-box" | "invite";
+import { createClient } from "@/lib/supabase/client";
+
+type Step = "loading" | "welcome" | "confirm" | "username" | "create-box" | "invite";
 
 interface Box {
   id: string;
@@ -14,9 +16,18 @@ interface Box {
   slug: string;
 }
 
+interface UserInfo {
+  fullName: string;
+  email: string;
+  avatarUrl: string | null;
+  isOAuth: boolean;
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
-  const [step, setStep] = useState<Step>("welcome");
+  const [step, setStep] = useState<Step>("loading");
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [boxName, setBoxName] = useState("");
   const [inviteEmails, setInviteEmails] = useState("");
@@ -25,6 +36,56 @@ export default function OnboardingPage() {
   const [createdBox, setCreatedBox] = useState<Box | null>(null);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteSuccess, setInviteSuccess] = useState(false);
+
+  // Fetch user info on mount
+  useEffect(() => {
+    async function loadUser() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      const provider = user.app_metadata?.provider;
+      const isOAuth = provider === "google" || provider === "github" || provider === "apple";
+      const fullName = (user.user_metadata?.full_name as string) || "";
+      const avatarUrl = (user.user_metadata?.avatar_url as string) || null;
+
+      setUserInfo({
+        fullName,
+        email: user.email ?? "",
+        avatarUrl,
+        isOAuth,
+      });
+      setDisplayName(fullName);
+
+      // OAuth users go to confirm step, email users go to welcome
+      setStep(isOAuth ? "confirm" : "welcome");
+    }
+    loadUser();
+  }, [router]);
+
+  async function handleConfirm() {
+    setError("");
+    setLoading(true);
+
+    try {
+      // Update display name if changed
+      if (displayName.trim() && displayName.trim() !== userInfo?.fullName) {
+        const supabase = createClient();
+        await supabase.auth.updateUser({
+          data: { full_name: displayName.trim() },
+        });
+      }
+
+      setLoading(false);
+      setStep("create-box");
+    } catch {
+      setError("Something went wrong");
+      setLoading(false);
+    }
+  }
 
   async function handleSetUsername() {
     if (!username.trim()) return;
@@ -129,14 +190,26 @@ export default function OnboardingPage() {
     if (createdBox) {
       router.push(`/box/${createdBox.short_id}`);
     } else {
-      router.push("/");
+      router.push("/dashboard");
     }
     router.refresh();
   }
 
   const isValidUsername = /^[a-zA-Z0-9._-]{2,30}$/.test(username.trim());
 
-  // ── Welcome ──
+  // ── Loading ──
+  if (step === "loading") {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <svg className="h-6 w-6 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg>
+      </div>
+    );
+  }
+
+  // ── Welcome (email signup users) ──
   if (step === "welcome") {
     return (
       <div className="text-center">
@@ -163,7 +236,94 @@ export default function OnboardingPage() {
     );
   }
 
-  // ── Choose Username ──
+  // ── Confirm Info (OAuth users) ──
+  if (step === "confirm") {
+    return (
+      <div>
+        {/* Progress */}
+        <div className="mb-8 flex gap-2">
+          <div className="h-1 flex-1 rounded-full bg-white" />
+          <div className="h-1 flex-1 rounded-full bg-[#2a2a2a]" />
+        </div>
+
+        <h1 className="mb-2 text-[36px] font-bold leading-[44px] tracking-tight text-white">
+          Confirm your info
+        </h1>
+        <p className="mb-8 text-[16px] leading-[24px] text-[#888]">
+          We got these details from your account. Make sure everything looks right.
+        </p>
+
+        {/* Profile card */}
+        <div className="mb-6 rounded-[12px] border border-[#1a1a1a] bg-[#0f0f0f] p-5">
+          <div className="flex items-center gap-4">
+            {userInfo?.avatarUrl ? (
+              <img
+                src={userInfo.avatarUrl}
+                alt=""
+                className="h-14 w-14 rounded-full"
+              />
+            ) : (
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-[18px] font-bold text-black">
+                {userInfo?.fullName?.[0]?.toUpperCase() || userInfo?.email?.[0]?.toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[16px] font-semibold text-white">
+                {userInfo?.fullName || "—"}
+              </div>
+              <div className="truncate text-[14px] text-[#888]">
+                {userInfo?.email}
+              </div>
+            </div>
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#22c55e]/10">
+              <Check className="h-3.5 w-3.5 text-[#22c55e]" />
+            </div>
+          </div>
+        </div>
+
+        {/* Editable display name */}
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="displayName" className="mb-1.5 block text-[13px] font-medium text-[#888]">
+              Display name
+            </label>
+            <div className="relative">
+              <input
+                id="displayName"
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="h-10 w-full rounded-[8px] border border-[#2a2a2a] bg-[#111] px-3 pr-9 text-[14px] text-white placeholder:text-[#555] focus:border-[#444] focus:outline-none"
+              />
+              <Pencil className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#555]" />
+            </div>
+          </div>
+
+          {error && <p className="text-[14px] text-[#de1135]">{error}</p>}
+
+          <div className="pt-2">
+            <Button
+              onClick={handleConfirm}
+              loading={loading}
+              disabled={!displayName.trim()}
+              className="w-full"
+            >
+              Looks good, continue
+            </Button>
+          </div>
+        </div>
+
+        <button
+          onClick={handleFinish}
+          className="mt-6 text-[14px] text-[#888] underline underline-offset-2 hover:text-white"
+        >
+          Skip for now
+        </button>
+      </div>
+    );
+  }
+
+  // ── Choose Username (email signup users) ──
   if (step === "username") {
     return (
       <div>
@@ -242,13 +402,17 @@ export default function OnboardingPage() {
 
   // ── Create Box ──
   if (step === "create-box") {
+    const totalSteps = userInfo?.isOAuth ? 2 : 3;
     return (
       <div>
         {/* Progress */}
         <div className="mb-8 flex gap-2">
-          <div className="h-1 flex-1 rounded-full bg-white" />
-          <div className="h-1 flex-1 rounded-full bg-white" />
-          <div className="h-1 flex-1 rounded-full bg-[#2a2a2a]" />
+          {Array.from({ length: totalSteps }).map((_, i) => (
+            <div
+              key={i}
+              className={`h-1 flex-1 rounded-full ${i < totalSteps - 1 ? "bg-white" : "bg-[#2a2a2a]"}`}
+            />
+          ))}
         </div>
 
         <h1 className="mb-2 text-[36px] font-bold leading-[44px] tracking-tight text-white">
@@ -299,9 +463,9 @@ export default function OnboardingPage() {
     <div>
       {/* Progress */}
       <div className="mb-8 flex gap-2">
-        <div className="h-1 flex-1 rounded-full bg-white" />
-        <div className="h-1 flex-1 rounded-full bg-white" />
-        <div className="h-1 flex-1 rounded-full bg-white" />
+        {Array.from({ length: userInfo?.isOAuth ? 2 : 3 }).map((_, i) => (
+          <div key={i} className="h-1 flex-1 rounded-full bg-white" />
+        ))}
       </div>
 
       <h1 className="mb-2 text-[36px] font-bold leading-[44px] tracking-tight text-white">

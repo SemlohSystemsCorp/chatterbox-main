@@ -221,6 +221,8 @@ export default function VerifyPage() {
             }}
             type="text"
             inputMode="numeric"
+            autoComplete={i === 0 ? "one-time-code" : "off"}
+            autoFocus={i === 0}
             maxLength={1}
             value={digit}
             onChange={(e) => handleCodeChange(i, e.target.value)}

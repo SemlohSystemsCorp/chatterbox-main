@@ -12,10 +12,12 @@ import {
   Pin,
   PinOff,
 } from "lucide-react";
-import { Markdown, segmentContent } from "@/components/ui/markdown";
+import { segmentContent } from "@/components/ui/markdown";
 import { EmojiPicker } from "@/components/emoji-picker";
 import { getMediaType, type MediaType } from "@/components/modals/media-preview-modal";
 import { getInitials, type MessageData } from "@/lib/chat-helpers";
+import { TextWithPreviews } from "@/components/chat/link-preview";
+import { MemberProfileCard } from "@/components/chat/member-profile-card";
 
 // ── Shared callbacks interface ──
 
@@ -49,6 +51,8 @@ export interface MessageCallbacks {
   pinnedMessageIds?: Set<string>;
   onPin?: (messageId: string) => void;
   onUnpin?: (messageId: string) => void;
+  /** Box short_id for profile card DM navigation */
+  boxShortId?: string;
 }
 
 // ── System message helpers ──
@@ -120,9 +124,7 @@ export function MessageContent({
       {segmentContent(msg.content, getMediaType).map((seg, si) => {
         if (seg.type === "text") {
           return (
-            <Markdown key={si} className="text-[14px] leading-[22px]" mentionNames={cb.mentionNames}>
-              {seg.content}
-            </Markdown>
+            <TextWithPreviews key={si} text={seg.content} mentionNames={cb.mentionNames} />
           );
         }
         if (seg.mediaType === "image") {
@@ -433,9 +435,15 @@ export function ThreadReplies({
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-[13px] font-semibold text-white">
-                      {reply.sender.full_name || reply.sender.email}
-                    </span>
+                    <MemberProfileCard
+                      sender={reply.sender}
+                      currentUserId={cb.currentUserId}
+                      boxShortId={cb.boxShortId}
+                    >
+                      <span className="text-[13px] font-semibold text-white">
+                        {reply.sender.full_name || reply.sender.email}
+                      </span>
+                    </MemberProfileCard>
                     <span className="text-[10px] text-[#444]">
                       {new Date(reply.created_at).toLocaleTimeString([], {
                         hour: "numeric",

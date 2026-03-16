@@ -152,9 +152,9 @@ export default function SignupPage() {
 
       <p className="mt-8 text-[13px] leading-[20px] text-[#666]">
         By creating an account, you agree to Chatterbox&apos;s{" "}
-        <a href="#" className="text-white underline underline-offset-2">Terms of Service</a>
+        <Link href="/terms" className="text-white underline underline-offset-2">Terms of Service</Link>
         {" "}and{" "}
-        <a href="#" className="text-white underline underline-offset-2">Privacy Policy</a>.
+        <Link href="/privacy" className="text-white underline underline-offset-2">Privacy Policy</Link>.
       </p>
     </div>
   );

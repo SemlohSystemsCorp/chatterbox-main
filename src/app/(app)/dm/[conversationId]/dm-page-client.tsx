@@ -26,6 +26,7 @@ import {
 } from "@/components/chat/message-components";
 import { createClient } from "@/lib/supabase/client";
 import { showPushNotification } from "@/lib/notifications";
+import { MemberProfileCard } from "@/components/chat/member-profile-card";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { usePresence } from "@/hooks/use-presence";
 import { useTyping } from "@/hooks/use-typing";
@@ -853,6 +854,7 @@ export function DmPageClient({
     onEditKeyDown: handleEditKeyDown,
     inputRef,
     mentionNames,
+    boxShortId: box?.short_id,
   };
 
   return (
@@ -1056,9 +1058,15 @@ export function DmPageClient({
                         <div className="min-w-0 flex-1">
                           {!grouped && (
                             <div className="flex items-baseline gap-2">
-                              <span className="text-[14px] font-semibold text-white hover:underline">
-                                {msg.sender.full_name || msg.sender.email}
-                              </span>
+                              <MemberProfileCard
+                                sender={msg.sender}
+                                currentUserId={user.id}
+                                boxShortId={box?.short_id}
+                              >
+                                <span className="text-[14px] font-semibold text-white">
+                                  {msg.sender.full_name || msg.sender.email}
+                                </span>
+                              </MemberProfileCard>
                               <span className="text-[11px] text-[#444]">
                                 {formatTime(msg.created_at)}
                               </span>

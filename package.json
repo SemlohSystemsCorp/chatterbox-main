@@ -14,6 +14,7 @@
     "@daily-co/daily-react": "^0.24.0",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
+    "@polar-sh/sdk": "^0.46.4",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.99.1",
     "clsx": "^2.1.1",

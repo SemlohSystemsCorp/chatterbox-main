@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -8,15 +8,28 @@ import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 import { useSettingsStore } from "@/stores/settings-store";
 
+const ERROR_MESSAGES: Record<string, string> = {
+  email_exists: "An account with this email already exists. Please log in with your email and password instead.",
+  auth_callback_error: "Something went wrong during sign in. Please try again.",
+};
+
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/dashboard";
+  const urlError = searchParams.get("error");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
+
+  // Show error from URL params (e.g. after OAuth callback failure)
+  useEffect(() => {
+    if (urlError && ERROR_MESSAGES[urlError]) {
+      setError(ERROR_MESSAGES[urlError]);
+    }
+  }, [urlError]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -134,7 +147,7 @@ export default function LoginPage() {
 
       <div className="mt-6 text-center">
         <Link
-          href="/login"
+          href="/forgot-password"
           className="text-[14px] text-white underline decoration-[#666] underline-offset-4 hover:decoration-white"
         >
           Forgot password?
