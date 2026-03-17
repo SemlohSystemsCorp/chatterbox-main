@@ -3,7 +3,7 @@ import { MessageSquare } from "lucide-react";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Reset Password",
+  title: "Reset Your Password",
   description: "Reset your Chatterbox account password.",
 };
 
