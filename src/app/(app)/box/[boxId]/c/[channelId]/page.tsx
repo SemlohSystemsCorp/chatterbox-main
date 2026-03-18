@@ -106,6 +106,25 @@ export default async function ChannelPage({
     };
   });
 
+  // Check if Zoom is connected for this workspace
+  const { data: zoomIntegration } = await supabase
+    .from("integrations")
+    .select("id")
+    .eq("name", "zoom")
+    .maybeSingle();
+
+  let zoomConnected = false;
+  if (zoomIntegration) {
+    const { data: zoomWi } = await supabase
+      .from("workspace_integrations")
+      .select("id")
+      .eq("workspace_id", box.id)
+      .eq("integration_id", zoomIntegration.id)
+      .eq("enabled", true)
+      .maybeSingle();
+    zoomConnected = !!zoomWi;
+  }
+
   // Fetch the 50 most recent messages (descending to get newest, then reverse)
   const { data: rawMessages } = await supabase
     .from("messages")
@@ -149,6 +168,7 @@ export default async function ChannelPage({
       initialReadCursors={readCursors}
       activeCall={activeCall}
       activeCalls={activeCalls}
+      zoomConnected={zoomConnected}
       initialEvents={channelEvents}
       initialMessages={
         messages.map((m) => ({

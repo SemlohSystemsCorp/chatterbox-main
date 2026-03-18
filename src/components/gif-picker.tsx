@@ -173,6 +173,7 @@ export function GifPicker({ onSelect, children }: GifPickerProps) {
                     <button
                       onClick={() => { setQuery(""); setDebouncedQuery(""); }}
                       className="flex h-4 w-4 items-center justify-center rounded-full text-[#555] hover:text-white"
+                      title="Clear search"
                     >
                       <X className="h-3 w-3" />
                     </button>

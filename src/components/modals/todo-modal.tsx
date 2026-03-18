@@ -114,6 +114,7 @@ export function TodoModal({ open, onClose }: TodoModalProps) {
           <button
             onClick={onClose}
             className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            title="Close"
           >
             <X className="h-4 w-4" />
           </button>
@@ -133,6 +134,7 @@ export function TodoModal({ open, onClose }: TodoModalProps) {
             type="submit"
             disabled={!newText.trim() || adding}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] bg-white text-black transition-colors hover:bg-[#ddd] disabled:opacity-40"
+            title="Add todo"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -165,6 +167,7 @@ export function TodoModal({ open, onClose }: TodoModalProps) {
                       <button
                         onClick={() => handleDelete(todo.id)}
                         className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] text-[#333] opacity-0 transition-all hover:text-[#de1135] group-hover:opacity-100"
+                        title="Delete todo"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>

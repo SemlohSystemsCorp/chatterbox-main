@@ -41,7 +41,12 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/invite") ||
     pathname.startsWith("/api") ||
     pathname === "/onboarding" ||
-    pathname === "/forgot-password";
+    pathname === "/forgot-password" ||
+    pathname === "/terms" ||
+    pathname === "/privacy" ||
+    pathname === "/pricing" ||
+    pathname === "/about" ||
+    pathname === "/why-chatterbox";
 
   if (!user && !isAuthPage && !isPublicPage) {
     const url = request.nextUrl.clone();

@@ -2,6 +2,7 @@
 
 import { SmileyIcon as Smile, PencilIcon as Pencil, TrashIcon as Trash2, ReplyIcon as Reply, KebabHorizontalIcon as MoreHorizontal, GlobeIcon as Languages, DeviceMobileIcon as Phone, NoEntryIcon as PhoneOff, PinIcon as Pin, PinSlashIcon as PinOff } from "@primer/octicons-react";
 import { segmentContent } from "@/components/ui/markdown";
+import { Tooltip } from "@/components/ui/tooltip";
 import { EmojiPicker } from "@/components/emoji-picker";
 import { getMediaType, type MediaType } from "@/components/modals/media-preview-modal";
 import { getInitials, type MessageData } from "@/lib/chat-helpers";
@@ -298,40 +299,44 @@ export function HoverActions({
           if (!open) cb.onHover(null);
         }}
       >
-        <button
-          className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-          title="React"
-        >
-          <Smile className="h-3.5 w-3.5" />
-        </button>
+        <Tooltip label="React">
+          <button
+            className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+          >
+            <Smile className="h-3.5 w-3.5" />
+          </button>
+        </Tooltip>
       </EmojiPicker>
-      <button
-        onClick={() => {
-          cb.onReply(msg);
-          cb.inputRef.current?.focus();
-        }}
-        className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-        title="Reply"
-      >
-        <Reply className="h-3.5 w-3.5" />
-      </button>
-      <button
-        onClick={() => cb.onTranslate(msg.id, msg.content)}
-        disabled={cb.translatingId === msg.id}
-        className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white disabled:opacity-50"
-        title="Translate"
-      >
-        <Languages className="h-3.5 w-3.5" />
-      </button>
+      <Tooltip label="Reply">
+        <button
+          onClick={() => {
+            cb.onReply(msg);
+            cb.inputRef.current?.focus();
+          }}
+          className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+        >
+          <Reply className="h-3.5 w-3.5" />
+        </button>
+      </Tooltip>
+      <Tooltip label="Translate">
+        <button
+          onClick={() => cb.onTranslate(msg.id, msg.content)}
+          disabled={cb.translatingId === msg.id}
+          className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white disabled:opacity-50"
+        >
+          <Languages className="h-3.5 w-3.5" />
+        </button>
+      </Tooltip>
       {isOwn && (
         <>
-          <button
-            onClick={() => cb.onEdit(msg.id, msg.content)}
-            className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-            title="Edit"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
+          <Tooltip label="Edit">
+            <button
+              onClick={() => cb.onEdit(msg.id, msg.content)}
+              className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
           {cb.confirmDeleteId === msg.id ? (
             <button
               onClick={() => cb.onDelete(msg.id)}
@@ -340,41 +345,45 @@ export function HoverActions({
               Confirm?
             </button>
           ) : (
-            <button
-              onClick={() => cb.onConfirmDelete(msg.id)}
-              className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-[#de1135]"
-              title="Delete"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            <Tooltip label="Delete">
+              <button
+                onClick={() => cb.onConfirmDelete(msg.id)}
+                className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-[#de1135]"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
           )}
         </>
       )}
       {cb.onPin && cb.onUnpin && (
         cb.pinnedMessageIds?.has(msg.id) ? (
-          <button
-            onClick={() => cb.onUnpin!(msg.id)}
-            className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#f59e0b] transition-colors hover:bg-[#1a1a1a] hover:text-[#fbbf24]"
-            title="Unpin message"
-          >
-            <PinOff className="h-3.5 w-3.5" />
-          </button>
+          <Tooltip label="Unpin message">
+            <button
+              onClick={() => cb.onUnpin!(msg.id)}
+              className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#f59e0b] transition-colors hover:bg-[#1a1a1a] hover:text-[#fbbf24]"
+            >
+              <PinOff className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
         ) : (
-          <button
-            onClick={() => cb.onPin!(msg.id)}
-            className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-            title="Pin message"
-          >
-            <Pin className="h-3.5 w-3.5" />
-          </button>
+          <Tooltip label="Pin message">
+            <button
+              onClick={() => cb.onPin!(msg.id)}
+              className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <Pin className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
         )
       )}
-      <button
-        className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-        title="More"
-      >
-        <MoreHorizontal className="h-3.5 w-3.5" />
-      </button>
+      <Tooltip label="More">
+        <button
+          className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+        >
+          <MoreHorizontal className="h-3.5 w-3.5" />
+        </button>
+      </Tooltip>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { GearIcon as Settings, SignOutIcon as LogOut } from "@primer/octicons-react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { createClient } from "@/lib/supabase/client";
 
 interface UserPanelProps {
@@ -53,15 +54,21 @@ export function UserPanel({ user }: UserPanelProps) {
           <div className="truncate text-[11px] text-[#555]">{user.email}</div>
         </div>
         <div className="flex gap-0.5">
-          <button className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#444] transition-colors hover:bg-[#1a1a1a] hover:text-white">
-            <Settings className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={handleSignOut}
-            className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#444] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-          </button>
+          <Tooltip label="Settings">
+            <button
+              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#444] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <Settings className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+          <Tooltip label="Sign out">
+            <button
+              onClick={handleSignOut}
+              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#444] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
         </div>
       </div>
     </div>

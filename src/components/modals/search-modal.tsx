@@ -337,6 +337,7 @@ export function SearchModal({ open, onClose, boxShortId, boxId }: SearchModalPro
                 inputRef.current?.focus();
               }}
               className="flex h-5 w-5 items-center justify-center rounded text-[#555] hover:text-white"
+              title="Clear search"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -346,6 +347,7 @@ export function SearchModal({ open, onClose, boxShortId, boxId }: SearchModalPro
               onClick={askAI}
               disabled={aiLoading}
               className="flex h-6 w-6 items-center justify-center rounded-[4px] bg-white text-black transition-colors hover:bg-[#e0e0e0] disabled:bg-[#333] disabled:text-[#666]"
+              title="Ask AI"
             >
               <ArrowRight className="h-3.5 w-3.5" />
             </button>

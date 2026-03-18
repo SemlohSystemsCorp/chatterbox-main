@@ -127,6 +127,7 @@ export function GroupDmModal({
           <button
             onClick={onClose}
             className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            title="Close"
           >
             <X className="h-4 w-4" />
           </button>
@@ -157,6 +158,7 @@ export function GroupDmModal({
                   key={m.user_id}
                   onClick={() => toggleMember(m.user_id)}
                   className="flex items-center gap-1 rounded-full bg-[#1a1a1a] px-2.5 py-1 text-[12px] text-[#ccc] transition-colors hover:bg-[#252525]"
+                  title={`Remove ${m.full_name || m.email}`}
                 >
                   {m.full_name || m.email}
                   <X className="h-3 w-3 text-[#555]" />

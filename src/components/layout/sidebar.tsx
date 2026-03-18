@@ -80,6 +80,7 @@ export function Sidebar({ user, boxes, activeBoxId }: SidebarProps) {
           <Link
             href="/create/box"
             className="flex h-5 w-5 items-center justify-center rounded text-[#444] hover:bg-[#1a1a1a] hover:text-white"
+            title="Create new box"
           >
             <Plus className="h-3 w-3" />
           </Link>

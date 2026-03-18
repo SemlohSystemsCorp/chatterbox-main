@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { BellIcon as Bell, ChecklistIcon as CheckCheck, XIcon as X, LoopIcon as Loader2, MentionIcon as AtSign, CommentDiscussionIcon as MessageSquare, ReplyIcon as Reply, SmileyIcon as Smile, MailIcon as Mail, PinIcon as Pin, SparklesFillIcon as Sparkles, ArrowLeftIcon as ArrowLeft } from "@primer/octicons-react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { initNotifications, showPushNotification } from "@/lib/notifications";
@@ -182,21 +183,22 @@ export function NotificationBell({ userId }: NotificationBellProps) {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => {
-          setOpen(!open);
-          if (!open) fetchNotifications();
-        }}
-        className="relative flex h-8 w-8 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-        title="Notifications"
-      >
-        <Bell className="h-4 w-4" />
-        {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#de1135] px-1 text-[10px] font-bold tabular-nums text-white shadow-[0_0_0_2px_#0a0a0a]">
-            {unreadCount > 99 ? "99+" : unreadCount}
-          </span>
-        )}
-      </button>
+      <Tooltip label="Notifications" side="bottom">
+        <button
+          onClick={() => {
+            setOpen(!open);
+            if (!open) fetchNotifications();
+          }}
+          className="relative flex h-8 w-8 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+        >
+          <Bell className="h-4 w-4" />
+          {unreadCount > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#de1135] px-1 text-[10px] font-bold tabular-nums text-white shadow-[0_0_0_2px_#0a0a0a]">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </button>
+      </Tooltip>
 
       {open && (
         <div className="absolute right-0 top-full z-50 mt-2 w-[380px] overflow-hidden rounded-[12px] border border-[#1a1a1a] bg-[#111] shadow-[0_16px_64px_rgba(0,0,0,0.5)]">
@@ -207,6 +209,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                 <button
                   onClick={() => setSummaryView(false)}
                   className="flex h-6 w-6 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+                  title="Back to notifications"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
                 </button>
@@ -247,6 +250,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                   setSummaryView(false);
                 }}
                 className="flex h-6 w-6 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+                title="Close"
               >
                 <X className="h-3.5 w-3.5" />
               </button>

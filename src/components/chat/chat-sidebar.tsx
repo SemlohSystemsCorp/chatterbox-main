@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { HashIcon as Hash, LockIcon as Lock, PlusIcon as Plus, HubotIcon as Bot, CircleIcon as Circle, CommentDiscussionIcon as MessageSquare, DeviceMobileIcon as Phone, BookmarkIcon as Bookmark } from "@primer/octicons-react";
+import { HashIcon as Hash, LockIcon as Lock, PlusIcon as Plus, HubotIcon as Bot, CircleIcon as Circle, CommentDiscussionIcon as MessageSquare, DeviceMobileIcon as Phone, BookmarkIcon as Bookmark, PlugIcon as Plug } from "@primer/octicons-react";
 import { BoxSwitcher } from "@/components/chat/box-switcher";
 import { UserPopover } from "@/components/chat/user-popover";
 import { createClient } from "@/lib/supabase/client";
@@ -176,6 +176,7 @@ export function ChatSidebar({
               <button
                 onClick={onCreateChannel}
                 className="flex h-4 w-4 items-center justify-center rounded text-[#444] hover:text-white"
+                title="Create channel"
               >
                 <Plus className="h-3 w-3" />
               </button>
@@ -262,6 +263,7 @@ export function ChatSidebar({
             <button
               onClick={onCreateGroupDm}
               className="flex h-4 w-4 items-center justify-center rounded text-[#444] hover:text-white"
+              title="New group DM"
             >
               <Plus className="h-3 w-3" />
             </button>
@@ -412,6 +414,19 @@ export function ChatSidebar({
               })}
         </div>
       </div>
+
+      {/* Bottom links */}
+      {box && (
+        <div className="border-t border-[#1a1a1a] px-2 py-2">
+          <Link
+            href={`/box/${box.short_id}/integrations`}
+            className="flex items-center gap-2 rounded-[6px] px-2 py-1.5 text-[13px] text-[#666] transition-colors hover:bg-[#111] hover:text-[#aaa]"
+          >
+            <Plug className="h-3.5 w-3.5 text-[#555]" />
+            <span className="truncate">Integrations</span>
+          </Link>
+        </div>
+      )}
 
       {/* User popover */}
       <UserPopover

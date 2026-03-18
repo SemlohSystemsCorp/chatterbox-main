@@ -7,6 +7,7 @@ import { CreateChannelModal } from "@/components/modals/create-channel-modal";
 import { InviteModal } from "@/components/modals/invite-modal";
 import { GroupDmModal } from "@/components/modals/group-dm-modal";
 import { SearchModal } from "@/components/modals/search-modal";
+import { useScheduledMessageWatcher } from "@/hooks/use-scheduled-message-watcher";
 import { ChatSidebar, type SidebarCall, type SidebarConversation } from "@/components/chat/chat-sidebar";
 import { MessageComposer } from "@/components/chat/message-composer";
 import {
@@ -115,6 +116,7 @@ export function DmPageClient({
   activeCalls,
 }: DmPageClientProps) {
   const router = useRouter();
+  useScheduledMessageWatcher(user.id);
   const [messages, setMessages] = useState<MessageData[]>(initialMessages);
   const [liveChannels, setLiveChannels] = useState<SidebarChannel[]>(channels);
   const [liveMembers, setLiveMembers] = useState<MemberData[]>(members);
@@ -1667,6 +1669,7 @@ export function DmPageClient({
           onFileUpload={handleFileUpload}
           onSend={handleSend}
           members={liveMembers}
+          channels={liveChannels}
           onSchedule={handleSchedule}
           onGifSelect={async (gif) => {
             if (sending) return;

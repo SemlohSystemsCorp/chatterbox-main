@@ -13,6 +13,7 @@ import { SummaryModal } from "@/components/modals/summary-modal";
 import { DigestModal } from "@/components/modals/digest-modal";
 import { GroupDmModal } from "@/components/modals/group-dm-modal";
 import { HighlightsPanel } from "@/components/chat/highlights-panel";
+import { useScheduledMessageWatcher } from "@/hooks/use-scheduled-message-watcher";
 import { PinnedMessagesPanel } from "@/components/chat/pinned-messages-panel";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ChatSidebar, type SidebarCall, type SidebarConversation } from "@/components/chat/chat-sidebar";
@@ -106,6 +107,7 @@ interface ChannelPageClientProps {
   activeCall?: ActiveCallData | null;
   activeCalls?: SidebarCall[];
   initialEvents: ChannelEventData[];
+  zoomConnected?: boolean;
 }
 
 // ── Notification helper (fire-and-forget) ──
@@ -119,17 +121,20 @@ function sendMessageNotifications(
   channel: { id: string; name: string },
   box: { id: string }
 ) {
-  // Parse @mentions from content (format: @username)
-  const mentionRegex = /@(\w[\w.-]*)/g;
-  const mentionedUsernames = new Set<string>();
+  // Parse @mentions from content (format: <@handle>)
+  const mentionRegex = /<@([a-zA-Z0-9._-]+)>/g;
+  const mentionedHandles = new Set<string>();
   let match;
   while ((match = mentionRegex.exec(content)) !== null) {
-    mentionedUsernames.add(match[1].toLowerCase());
+    mentionedHandles.add(match[1].toLowerCase());
   }
 
-  // Find mentioned member IDs
+  // Find mentioned member IDs — match against username or email prefix
   const mentionedIds = members
-    .filter((m) => mentionedUsernames.has((m.username || "").toLowerCase()))
+    .filter((m) => {
+      const handle = (m.username || m.email.split("@")[0]).toLowerCase();
+      return mentionedHandles.has(handle);
+    })
     .map((m) => m.user_id)
     .filter((id) => id !== sender.id);
 
@@ -188,8 +193,10 @@ export function ChannelPageClient({
   activeCall,
   activeCalls,
   initialEvents,
+  zoomConnected,
 }: ChannelPageClientProps) {
   const router = useRouter();
+  useScheduledMessageWatcher(user.id);
   const [messages, setMessages] = useState<MessageData[]>(initialMessages);
   const [channelEvents, setChannelEvents] = useState<ChannelEventData[]>(initialEvents);
   const [liveChannels, setLiveChannels] = useState<SidebarChannel[]>(channels);
@@ -305,6 +312,36 @@ export function ChannelPageClient({
       }
     } finally {
       setStartingCall(false);
+    }
+  }
+
+  // ── Zoom Meeting ──
+  const [creatingZoomMeeting, setCreatingZoomMeeting] = useState(false);
+
+  async function handleStartZoomMeeting() {
+    setCreatingZoomMeeting(true);
+    try {
+      const res = await fetch("/api/integrations/zoom/create-meeting", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workspace_id: box.id,
+          channel_id: channel.id,
+          topic: `Meeting in #${channel.name}`,
+        }),
+      });
+      const data = await res.json();
+      if (data.join_url) {
+        // Post the meeting link as a message in the channel
+        const supabase = createClient();
+        await supabase.from("messages").insert({
+          channel_id: channel.id,
+          sender_id: user.id,
+          content: `**Zoom Meeting** — [Join Meeting](${data.join_url})\nTopic: ${data.topic || `Meeting in #${channel.name}`}`,
+        });
+      }
+    } finally {
+      setCreatingZoomMeeting(false);
     }
   }
 
@@ -1602,7 +1639,7 @@ export function ChannelPageClient({
   }, [topLevelMessages, channelEvents]);
 
   const mentionNames = Object.fromEntries(
-    liveMembers.map((m) => [m.username, m.full_name || m.email])
+    liveMembers.map((m) => [m.username || m.email.split("@")[0], m.full_name || m.email])
   );
 
   const msgCallbacks: MessageCallbacks = {
@@ -1720,6 +1757,21 @@ export function ChannelPageClient({
             >
               <Phone className="h-3.5 w-3.5" />
             </button>
+            {zoomConnected && (
+              <button
+                onClick={handleStartZoomMeeting}
+                disabled={creatingZoomMeeting}
+                className="flex h-7 items-center gap-1 rounded-[6px] px-1.5 text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-[#2D8CFF] disabled:opacity-50"
+                title="Start Zoom meeting"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M4 3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2.5l4 3V6.5l-4 3V5a2 2 0 0 0-2-2H4zm0 2h10v10H4V5z" />
+                </svg>
+                {creatingZoomMeeting && (
+                  <span className="text-[10px] text-[#2D8CFF]">...</span>
+                )}
+              </button>
+            )}
             <button
               onClick={() => setSummaryOpen(true)}
               className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
@@ -2182,6 +2234,7 @@ export function ChannelPageClient({
           onFileUpload={handleFileUpload}
           onSend={handleSend}
           members={liveMembers}
+          channels={liveChannels}
           onSchedule={handleSchedule}
           onGifSelect={async (gif) => {
             if (sending) return;

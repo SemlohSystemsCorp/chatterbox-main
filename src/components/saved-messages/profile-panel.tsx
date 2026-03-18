@@ -94,6 +94,7 @@ export function ProfilePanel({ user }: ProfilePanelProps) {
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
               className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#0a0a0a] bg-[#222] text-[#888] transition-colors hover:bg-[#333] hover:text-white disabled:opacity-50"
+              title="Upload avatar"
             >
               <Camera className="h-3.5 w-3.5" />
             </button>

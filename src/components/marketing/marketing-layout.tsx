@@ -18,6 +18,7 @@ export function MarketingNav() {
           <div className="hidden items-center gap-1 lg:flex">
             {[
               { label: "Pricing", href: "/pricing" },
+              { label: "Why Chatterbox?", href: "/why-chatterbox" },
               { label: "About", href: "/about" },
             ].map((item) => (
               <Link

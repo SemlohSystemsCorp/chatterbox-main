@@ -145,6 +145,7 @@ export function HighlightsPanel({
           <button
             onClick={onDismiss}
             className="flex h-6 w-6 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            title="Close highlights"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -205,6 +206,7 @@ export function HighlightsPanel({
             <button
               onClick={() => setShowDigest(false)}
               className="flex h-5 w-5 items-center justify-center rounded text-[#555] transition-colors hover:text-white"
+              title="Dismiss"
             >
               <X className="h-3 w-3" />
             </button>

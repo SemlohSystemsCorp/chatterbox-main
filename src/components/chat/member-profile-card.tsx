@@ -370,6 +370,7 @@ function UserProfileModal({
               <button
                 onClick={onClose}
                 className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white/70 transition-colors hover:bg-black/60 hover:text-white"
+                title="Close"
               >
                 <X className="h-4 w-4" />
               </button>

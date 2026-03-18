@@ -536,6 +536,7 @@ function CallUI({
               <button
                 onClick={toggleChat}
                 className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] hover:bg-[#1a1a1a] hover:text-white"
+                title="Close chat"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -585,6 +586,7 @@ function CallUI({
                   onClick={sendChat}
                   disabled={!chatInput.trim()}
                   className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:text-white disabled:opacity-30"
+                  title="Send message"
                 >
                   <Send className="h-3.5 w-3.5" />
                 </button>

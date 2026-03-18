@@ -108,6 +108,7 @@ export function TodosPanel() {
             type="submit"
             disabled={!newText.trim() || adding}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] bg-white text-black transition-colors hover:bg-[#ddd] disabled:opacity-40"
+            title="Add todo"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -129,6 +130,7 @@ export function TodosPanel() {
                 <button
                   onClick={() => handleDelete(todo.id)}
                   className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] text-[#333] opacity-0 transition-all hover:text-[#de1135] group-hover:opacity-100"
+                  title="Delete todo"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>

@@ -60,6 +60,7 @@ export function PinnedMessagesPanel({
         <button
           onClick={onClose}
           className="flex h-6 w-6 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+          title="Close"
         >
           <X className="h-3.5 w-3.5" />
         </button>

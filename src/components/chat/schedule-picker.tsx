@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { ClockIcon as Clock, XIcon as X, ChevronRightIcon as ChevronRight } from "@primer/octicons-react";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface SchedulePickerProps {
   onSchedule: (date: Date) => void;
@@ -97,17 +98,18 @@ export function SchedulePicker({ onSchedule, disabled }: SchedulePickerProps) {
 
   return (
     <div className="relative" ref={ref}>
-      <button
-        onClick={() => {
-          setOpen(!open);
-          setShowCustom(false);
-        }}
-        disabled={disabled}
-        className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white disabled:opacity-50"
-        title="Schedule message"
-      >
-        <Clock className="h-3.5 w-3.5" />
-      </button>
+      <Tooltip label="Schedule message">
+        <button
+          onClick={() => {
+            setOpen(!open);
+            setShowCustom(false);
+          }}
+          disabled={disabled}
+          className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white disabled:opacity-50"
+        >
+          <Clock className="h-3.5 w-3.5" />
+        </button>
+      </Tooltip>
 
       {open && (
         <div className="absolute bottom-full right-0 z-50 mb-2 w-[260px] overflow-hidden rounded-[10px] border border-[#1a1a1a] bg-[#111] shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
@@ -195,6 +197,7 @@ export function ScheduledBanner({
       <button
         onClick={onCancel}
         className="ml-auto flex h-4 w-4 items-center justify-center rounded-full text-[#555] hover:text-white"
+        title="Cancel schedule"
       >
         <X className="h-3 w-3" />
       </button>

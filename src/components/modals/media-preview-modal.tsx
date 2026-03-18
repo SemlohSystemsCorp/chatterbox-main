@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { XIcon as X, DownloadIcon as Download, ZoomInIcon as ZoomIn, ZoomOutIcon as ZoomOut } from "@primer/octicons-react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { useState } from "react";
 
 export type MediaType = "image" | "video" | "audio";
@@ -67,41 +68,46 @@ export function MediaPreviewModal({
         <div className="flex items-center gap-1">
           {type === "image" && (
             <>
-              <button
-                onClick={() => setZoom((z) => Math.min(z + 0.25, 5))}
-                className="flex h-8 w-8 items-center justify-center rounded-[6px] text-[#888] transition-colors hover:bg-[#222] hover:text-white"
-                title="Zoom in (+)"
-              >
-                <ZoomIn className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setZoom((z) => Math.max(z - 0.25, 0.25))}
-                className="flex h-8 w-8 items-center justify-center rounded-[6px] text-[#888] transition-colors hover:bg-[#222] hover:text-white"
-                title="Zoom out (-)"
-              >
-                <ZoomOut className="h-4 w-4" />
-              </button>
+              <Tooltip label="Zoom in (+)">
+                <button
+                  onClick={() => setZoom((z) => Math.min(z + 0.25, 5))}
+                  className="flex h-8 w-8 items-center justify-center rounded-[6px] text-[#888] transition-colors hover:bg-[#222] hover:text-white"
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </button>
+              </Tooltip>
+              <Tooltip label="Zoom out (-)">
+                <button
+                  onClick={() => setZoom((z) => Math.max(z - 0.25, 0.25))}
+                  className="flex h-8 w-8 items-center justify-center rounded-[6px] text-[#888] transition-colors hover:bg-[#222] hover:text-white"
+                >
+                  <ZoomOut className="h-4 w-4" />
+                </button>
+              </Tooltip>
               <span className="mx-1 text-[11px] text-[#555]">
                 {Math.round(zoom * 100)}%
               </span>
             </>
           )}
-          <a
-            href={url}
-            download={displayName}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex h-8 w-8 items-center justify-center rounded-[6px] text-[#888] transition-colors hover:bg-[#222] hover:text-white"
-            title="Download"
-          >
-            <Download className="h-4 w-4" />
-          </a>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-[6px] text-[#888] transition-colors hover:bg-[#222] hover:text-white"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <Tooltip label="Download">
+            <a
+              href={url}
+              download={displayName}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-8 w-8 items-center justify-center rounded-[6px] text-[#888] transition-colors hover:bg-[#222] hover:text-white"
+            >
+              <Download className="h-4 w-4" />
+            </a>
+          </Tooltip>
+          <Tooltip label="Close (Esc)">
+            <button
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-[6px] text-[#888] transition-colors hover:bg-[#222] hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </Tooltip>
         </div>
       </div>
 

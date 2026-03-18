@@ -91,12 +91,14 @@ export function SummaryModal({
               onClick={fetchSummary}
               disabled={loading}
               className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white disabled:opacity-50"
+              title="Refresh summary"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
             </button>
             <button
               onClick={onClose}
               className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+              title="Close"
             >
               <X className="h-4 w-4" />
             </button>

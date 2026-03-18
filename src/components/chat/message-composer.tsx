@@ -2,13 +2,14 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { PaperAirplaneIcon as Send, PlusIcon as Plus, SmileyIcon as Smile, ReplyIcon as Reply, XIcon as X, ImageIcon as Image, ClockIcon as Clock } from "@primer/octicons-react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { EmojiPicker } from "@/components/emoji-picker";
 import { GifPicker } from "@/components/gif-picker";
 import { ToneAdjuster } from "@/components/chat/tone-adjuster";
 import { MentionPicker } from "@/components/chat/mention-picker";
 import { SlashCommandPicker } from "@/components/chat/slash-command-picker";
 import { SchedulePicker } from "@/components/chat/schedule-picker";
-import type { MessageData, MemberData } from "@/lib/chat-helpers";
+import type { MessageData, MemberData, SidebarChannel } from "@/lib/chat-helpers";
 import type { SlashCommand } from "@/lib/slash-commands";
 
 // ── Types ──
@@ -41,6 +42,8 @@ export interface MessageComposerProps {
   onSend: () => void;
   /** Members available for @mentions */
   members?: MemberData[];
+  /** Channels available for @channel mentions */
+  channels?: SidebarChannel[];
   /** Called when user picks a GIF from the picker */
   onGifSelect?: (gif: { url: string; title: string; width: number; height: number }) => void;
   /** Called when user confirms scheduling a message */
@@ -77,6 +80,7 @@ export function MessageComposer({
   onFileUpload,
   onSend,
   members,
+  channels,
   onGifSelect,
   onSchedule,
 }: MessageComposerProps) {
@@ -160,11 +164,32 @@ export function MessageComposer({
       onNewMessageChange(updated);
       setMentionQuery(null);
 
-      // Refocus input
       requestAnimationFrame(() => {
         const textarea = inputRef.current;
         if (textarea) {
           const pos = mentionStart + `<@${handle}> `.length;
+          textarea.focus();
+          textarea.setSelectionRange(pos, pos);
+        }
+      });
+    },
+    [newMessage, mentionStart, mentionQuery, onNewMessageChange, inputRef],
+  );
+
+  const handleChannelSelect = useCallback(
+    (channel: SidebarChannel) => {
+      const before = newMessage.slice(0, mentionStart);
+      const after = newMessage.slice(
+        mentionStart + 1 + (mentionQuery?.length ?? 0),
+      );
+      const updated = `${before}#${channel.name} ${after}`;
+      onNewMessageChange(updated);
+      setMentionQuery(null);
+
+      requestAnimationFrame(() => {
+        const textarea = inputRef.current;
+        if (textarea) {
+          const pos = mentionStart + `#${channel.name} `.length;
           textarea.focus();
           textarea.setSelectionRange(pos, pos);
         }
@@ -182,7 +207,7 @@ export function MessageComposer({
         }
       }
       // If mention picker is open, let it handle arrow keys, enter, tab, escape
-      if (mentionQuery !== null && members && members.length > 0) {
+      if (mentionQuery !== null && ((members && members.length > 0) || (channels && channels.length > 0))) {
         if (["ArrowDown", "ArrowUp", "Enter", "Tab", "Escape"].includes(e.key)) {
           return;
         }
@@ -196,7 +221,7 @@ export function MessageComposer({
       }
       onKeyDown(e);
     },
-    [slashQuery, newMessage, mentionQuery, members, scheduledFor, onSchedule, onKeyDown],
+    [slashQuery, newMessage, mentionQuery, members, channels, scheduledFor, onSchedule, onKeyDown],
   );
 
   function handleSendClick() {
@@ -235,8 +260,10 @@ export function MessageComposer({
         {mentionQuery !== null && members && members.length > 0 && (
           <MentionPicker
             members={members}
+            channels={channels}
             query={mentionQuery}
-            onSelect={handleMentionSelect}
+            onSelectMember={handleMentionSelect}
+            onSelectChannel={handleChannelSelect}
             onClose={() => setMentionQuery(null)}
           />
         )}
@@ -252,6 +279,7 @@ export function MessageComposer({
             <button
               onClick={() => setScheduledFor(null)}
               className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded text-[#555] hover:text-white"
+              title="Cancel schedule"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -274,6 +302,7 @@ export function MessageComposer({
             <button
               onClick={onCancelReply}
               className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[#555] hover:text-white"
+              title="Cancel reply"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -327,6 +356,7 @@ export function MessageComposer({
                 <button
                   onClick={() => onRemoveAttachment(i)}
                   className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                  title="Remove attachment"
                 >
                   <X className="h-2.5 w-2.5" />
                 </button>
@@ -336,14 +366,15 @@ export function MessageComposer({
         )}
 
         <div className="flex items-end px-3 py-2">
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:text-white disabled:opacity-50"
-            title="Attach file"
-          >
-            <Plus className="h-5 w-5" />
-          </button>
+          <Tooltip label="Attach file">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:text-white disabled:opacity-50"
+            >
+              <Plus className="h-5 w-5" />
+            </button>
+          </Tooltip>
           <textarea
             ref={inputRef}
             value={newMessage}
@@ -356,9 +387,11 @@ export function MessageComposer({
           />
           {onGifSelect && (
             <GifPicker onSelect={onGifSelect}>
-              <button className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:text-white" title="GIF">
-                <Image className="h-5 w-5" />
-              </button>
+              <Tooltip label="GIF">
+                <button className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:text-white">
+                  <Image className="h-5 w-5" />
+                </button>
+              </Tooltip>
             </GifPicker>
           )}
           <EmojiPicker
@@ -367,9 +400,11 @@ export function MessageComposer({
               inputRef.current?.focus();
             }}
           >
-            <button className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:text-white" title="Emoji">
-              <Smile className="h-5 w-5" />
-            </button>
+            <Tooltip label="Emoji">
+              <button className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:text-white">
+                <Smile className="h-5 w-5" />
+              </button>
+            </Tooltip>
           </EmojiPicker>
         </div>
 
@@ -402,22 +437,23 @@ export function MessageComposer({
                 disabled={isDisabled}
               />
             )}
-            <button
-              onClick={handleSendClick}
-              disabled={isDisabled}
-              className={`flex h-7 items-center justify-center gap-1 rounded-[6px] px-2 transition-colors disabled:bg-[#1a1a1a] disabled:text-[#555] ${
-                scheduledFor
-                  ? "bg-[#d4a843] text-black hover:bg-[#c49a3a]"
-                  : "bg-white text-black hover:bg-[#e0e0e0]"
-              }`}
-              title={scheduledFor ? "Confirm schedule" : "Send message"}
-            >
-              {scheduledFor ? (
-                <Clock className="h-3.5 w-3.5" />
-              ) : (
-                <Send className="h-3.5 w-3.5" />
-              )}
-            </button>
+            <Tooltip label={scheduledFor ? "Confirm schedule" : "Send message"}>
+              <button
+                onClick={handleSendClick}
+                disabled={isDisabled}
+                className={`flex h-7 items-center justify-center gap-1 rounded-[6px] px-2 transition-colors disabled:bg-[#1a1a1a] disabled:text-[#555] ${
+                  scheduledFor
+                    ? "bg-[#d4a843] text-black hover:bg-[#c49a3a]"
+                    : "bg-white text-black hover:bg-[#e0e0e0]"
+                }`}
+              >
+                {scheduledFor ? (
+                  <Clock className="h-3.5 w-3.5" />
+                ) : (
+                  <Send className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </Tooltip>
           </div>
         </div>
       </div>

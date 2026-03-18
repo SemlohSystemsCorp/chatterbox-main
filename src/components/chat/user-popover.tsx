@@ -164,6 +164,7 @@ export function UserPopover({ user, isAdmin, onInvite, boxId, boxName, boxRole, 
             <button
               onClick={() => setStatusModalOpen(false)}
               className="flex h-5 w-5 items-center justify-center rounded text-[#555] hover:text-white"
+              title="Close"
             >
               <X className="h-3.5 w-3.5" />
             </button>

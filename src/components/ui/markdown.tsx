@@ -2,12 +2,13 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 import type { Components } from "react-markdown";
 
 interface MarkdownProps {
   children: string;
   className?: string;
-  /** Map of userId → display name for rendering @mentions */
+  /** Map of handle → display name for rendering @mentions */
   mentionNames?: Record<string, string>;
 }
 
@@ -93,17 +94,21 @@ const components: Components = {
 };
 
 export function Markdown({ children, className, mentionNames }: MarkdownProps) {
-  // Replace <@handle> with @DisplayName before markdown parsing
+  // Replace <@handle> with styled inline HTML before markdown parsing
   const processed = mentionNames
     ? children.replace(/<@([a-zA-Z0-9._-]+)>/g, (_, handle: string) => {
         const name = mentionNames[handle];
-        return name ? `**@${name}**` : `@${handle}`;
+        return `<span class="mention-tag">@${name || handle}</span>`;
       })
     : children;
 
   return (
-    <div className={`overflow-hidden break-words ${className ?? ""}`}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+    <div className={`overflow-hidden break-words ${className ?? ""} [&_.mention-tag]:rounded-[3px] [&_.mention-tag]:bg-[#276ef1]/15 [&_.mention-tag]:px-[3px] [&_.mention-tag]:py-[1px] [&_.mention-tag]:font-semibold [&_.mention-tag]:text-[#5b9bf5]`}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
+        components={components}
+      >
         {processed}
       </ReactMarkdown>
     </div>

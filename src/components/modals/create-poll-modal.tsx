@@ -132,6 +132,7 @@ export function CreatePollModal({
           <button
             onClick={onClose}
             className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            title="Close"
           >
             <X className="h-4 w-4" />
           </button>
@@ -176,6 +177,7 @@ export function CreatePollModal({
                         type="button"
                         onClick={() => removeOption(i)}
                         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-[#de1135]"
+                        title="Remove option"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>

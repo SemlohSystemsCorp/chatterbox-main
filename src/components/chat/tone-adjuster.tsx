@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { SparkleIcon as Wand2, LoopIcon as Loader2, UndoIcon as Undo2 } from "@primer/octicons-react";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface ToneAdjusterProps {
   text: string;
@@ -72,22 +73,25 @@ export function ToneAdjuster({ text, onRewrite }: ToneAdjusterProps) {
           <button
             onClick={handleUndo}
             className="flex h-6 items-center gap-1 rounded-[4px] px-1.5 text-[10px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            title="Undo rewrite"
           >
             <Undo2 className="h-3 w-3" />
             Undo
           </button>
         )}
-        <button
-          onClick={() => setOpen(!open)}
-          disabled={loading}
-          className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white disabled:opacity-50"
-        >
-          {loading ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Wand2 className="h-3.5 w-3.5" />
-          )}
-        </button>
+        <Tooltip label="Adjust tone">
+          <button
+            onClick={() => setOpen(!open)}
+            disabled={loading}
+            className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white disabled:opacity-50"
+          >
+            {loading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Wand2 className="h-3.5 w-3.5" />
+            )}
+          </button>
+        </Tooltip>
       </div>
 
       {open && (

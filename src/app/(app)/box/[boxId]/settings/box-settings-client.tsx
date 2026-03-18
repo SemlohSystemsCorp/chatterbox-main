@@ -102,6 +102,7 @@ function EditChannelModal({
           <button
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-[8px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            title="Close"
           >
             <X className="h-4 w-4" />
           </button>
@@ -752,6 +753,7 @@ export function BoxSettingsClient({
                           <button
                             onClick={() => handleRemoveMember(member.id)}
                             className="flex h-7 items-center gap-1 rounded-[6px] px-2 text-[12px] text-[#555] opacity-0 transition-all hover:bg-[#2a1520] hover:text-[#de1135] group-hover:opacity-100"
+                            title="Remove member"
                           >
                             <X className="h-3 w-3" />
                             Remove
