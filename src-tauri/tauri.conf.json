@@ -5,7 +5,7 @@
   "identifier": "app.getchatterbox.desktop",
   "build": {
     "devUrl": "http://localhost:3000",
-    "beforeDevCommand": "",
+    "beforeDevCommand": "mkdir -p .next/standalone .next/static public",
     "beforeBuildCommand": "npm run build:standalone"
   },
   "app": {
@@ -40,6 +40,11 @@
     "targets": "all",
     "macOS": {
       "minimumSystemVersion": "10.15"
+    },
+    "resources": {
+      "../.next/standalone/**/*": ".next/standalone/",
+      "../.next/static/**/*": ".next/static/",
+      "../public/**/*": "public/"
     }
   },
   "plugins": {
