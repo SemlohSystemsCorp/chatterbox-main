@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import { CommentDiscussionIcon as MessageSquare, SearchIcon as Search, BellIcon as Bell, SparklesFillIcon as Sparkles, DeviceCameraVideoIcon as Video, ShieldIcon as Shield, ArrowRightIcon as ArrowRight, GlobeIcon as Globe, PackageIcon as Box, ZapIcon as Zap, PeopleIcon as Users, HashIcon as Hash, ReplyIcon as Reply, SmileyGrinIcon as SmilePlus, ChevronRightIcon as ChevronRight, CheckIcon as Check } from "@primer/octicons-react";
+import { CommentDiscussionIcon as MessageSquare, SearchIcon as Search, BellIcon as Bell, SparklesFillIcon as Sparkles, DeviceCameraVideoIcon as Video, ShieldIcon as Shield, ArrowRightIcon as ArrowRight, GlobeIcon as Globe, PackageIcon as Box, ZapIcon as Zap, PeopleIcon as Users, HashIcon as Hash, ReplyIcon as Reply, SmileyGrinIcon as SmilePlus, ChevronRightIcon as ChevronRight, CheckIcon as Check, DesktopDownloadIcon as Download } from "@primer/octicons-react";
 import Image from "next/image";
 import {
   MarketingNav,
   MarketingFooter,
 } from "@/components/marketing/marketing-layout";
+import { isTauri } from "@/lib/tauri";
+import HomeDesktop from "./home-desktop";
 
 const features = [
   {
@@ -89,6 +91,8 @@ export default function HomePage() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  if (isTauri) return <HomeDesktop />;
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
@@ -661,6 +665,36 @@ export default function HomePage() {
                 Log in
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Download Desktop App ── */}
+      <section className="border-t border-white/[0.06] py-20 lg:py-24">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mx-auto flex max-w-2xl flex-col items-center rounded-2xl border border-white/[0.06] bg-white/[0.02] p-10 text-center lg:p-14">
+            <div className="mb-5 inline-flex rounded-2xl border border-white/[0.06] bg-white/[0.04] p-3.5">
+              <Download className="h-7 w-7 text-white" />
+            </div>
+            <h3 className="mb-2 text-[22px] font-bold tracking-[-0.01em] text-white">
+              Download for macOS
+            </h3>
+            <p className="mb-8 max-w-md text-[14px] leading-[22px] text-[#777]">
+              Get the native desktop app for the best experience. Native notifications,
+              global shortcuts, and a faster feel.
+            </p>
+            <a
+              href="https://github.com/SemlohSystemsCorp/chatterbox-demo/releases/latest"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex h-11 items-center gap-2.5 rounded-xl bg-white px-6 text-[14px] font-semibold text-black transition-all hover:bg-[#e8e8e8]"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+              Download for macOS
+            </a>
+            <p className="mt-4 text-[12px] text-[#444]">
+              Requires macOS 10.15 or later
+            </p>
           </div>
         </div>
       </section>

@@ -1,5 +1,7 @@
 "use client";
 
+import { isTauri, sendNativeNotification } from "@/lib/tauri";
+
 // ── Push Notification Utilities (via Service Worker) ──
 
 export type NotificationPermissionState = "granted" | "denied" | "default" | "unsupported";
@@ -89,6 +91,16 @@ export function playNotificationSound() {
  * Also plays a notification sound.
  */
 export async function showPushNotification(data: PushNotificationData): Promise<boolean> {
+  // Desktop app: use native OS notifications via Tauri
+  if (isTauri) {
+    const tabFocused = document.visibilityState === "visible" && document.hasFocus();
+    if (!tabFocused) {
+      await sendNativeNotification(data.title, data.body ?? "");
+    }
+    playNotificationSound();
+    return true;
+  }
+
   if (!isNotificationSupported()) return false;
   if (Notification.permission !== "granted") return false;
 
@@ -134,6 +146,24 @@ export async function showPushNotification(data: PushNotificationData): Promise<
  * Call once on app mount.
  */
 export async function initNotifications(): Promise<NotificationPermissionState> {
+  // Desktop app: request permission via Tauri plugin
+  if (isTauri) {
+    try {
+      const {
+        isPermissionGranted,
+        requestPermission,
+      } = await import("@tauri-apps/plugin-notification");
+      let permitted = await isPermissionGranted();
+      if (!permitted) {
+        const result = await requestPermission();
+        permitted = result === "granted";
+      }
+      return permitted ? "granted" : "denied";
+    } catch {
+      return "unsupported";
+    }
+  }
+
   if (!isNotificationSupported()) return "unsupported";
 
   // Register the service worker
