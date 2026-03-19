@@ -36,16 +36,12 @@ jobs:
         run: powershell -ExecutionPolicy Bypass -File scripts/download-node.ps1
 
       - name: Create .env file
-        shell: pwsh
+        shell: bash
         run: |
-          "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" | Out-File -FilePath .env -Encoding utf8
-          "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" | Out-File -FilePath .env -Append -Encoding utf8
-
-      - name: Verify .env exists
-        shell: pwsh
-        run: |
-          if (!(Test-Path .env)) { Write-Error ".env file not created"; exit 1 }
-          Write-Host ".env file created with $(Get-Content .env | Measure-Object -Line | Select-Object -ExpandProperty Lines) lines"
+          printf 'NEXT_PUBLIC_SUPABASE_URL=%s\n' "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" > .env
+          printf 'NEXT_PUBLIC_SUPABASE_ANON_KEY=%s\n' "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env
+          printf 'NEXT_PUBLIC_APP_URL=%s\n' "https://chatterbox-devs.vercel.app" >> .env
+          echo ".env created:" && cat .env | cut -c1-40
 
       - name: Install Tauri CLI
         run: npm install -g @tauri-apps/cli@latest
@@ -71,4 +67,3 @@ jobs:
             - Build locally with `npm run tauri:build`
           releaseDraft: false
           prerelease: false
-          updatedReleaseBody: true
