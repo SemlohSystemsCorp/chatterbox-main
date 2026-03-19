@@ -401,7 +401,7 @@ export default function HomePage() {
       <section className="border-t border-white/[0.06] py-16 lg:py-20">
         <div className="mx-auto max-w-6xl px-6">
           <p className="mb-10 text-center text-[13px] font-semibold uppercase tracking-[0.1em] text-[#444]">
-            These teams would trust us
+            These teams very likley would trust us
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-14 gap-y-8 lg:gap-x-20">
             {/* Netflix */}
