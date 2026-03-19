@@ -44,11 +44,17 @@ export function Sidebar({ user, boxes, activeBoxId }: SidebarProps) {
         <NotificationBell userId={user.id} />
       </div>
 
-      {/* Search */}
+      {/* Search / Command Palette trigger */}
       <div className="px-3 pt-3">
-        <button className="flex h-9 w-full items-center gap-2 rounded-[8px] bg-[#141414] px-3 text-[13px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-[#888]">
+        <button
+          onClick={() => {
+            document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true }));
+          }}
+          className="flex h-9 w-full items-center gap-2 rounded-[8px] bg-[#141414] px-3 text-[13px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-[#888]"
+        >
           <Search className="h-3.5 w-3.5" />
-          Search
+          <span className="flex-1 text-left">Search</span>
+          <kbd className="rounded bg-[#0a0a0a] px-1.5 py-0.5 text-[10px] text-[#444]">⌘K</kbd>
         </button>
       </div>
 
