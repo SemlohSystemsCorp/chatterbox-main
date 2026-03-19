@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { CommandPaletteProvider } from "@/components/command-palette-provider";
 
 export default async function AppLayout({
   children,
@@ -15,5 +16,10 @@ export default async function AppLayout({
     redirect("/login");
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <CommandPaletteProvider />
+    </>
+  );
 }
