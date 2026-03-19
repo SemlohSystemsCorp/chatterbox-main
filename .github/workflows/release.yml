@@ -38,20 +38,31 @@ jobs:
       - name: Create .env file
         shell: bash
         run: |
-          printf 'NEXT_PUBLIC_SUPABASE_URL=%s\n' "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" > .env
-          printf 'NEXT_PUBLIC_SUPABASE_ANON_KEY=%s\n' "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env
+          URL=$(echo "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" | tr -d '[:space:]' | tr -d '"' | tr -d "'")
+          KEY=$(echo "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" | tr -d '\r\n' | tr -d '"' | tr -d "'" | xargs)
+          printf 'NEXT_PUBLIC_SUPABASE_URL=%s\n' "$URL" > .env
+          printf 'NEXT_PUBLIC_SUPABASE_ANON_KEY=%s\n' "$KEY" >> .env
           printf 'NEXT_PUBLIC_APP_URL=%s\n' "https://chatterbox-devs.vercel.app" >> .env
-          echo ".env created:" && cat .env | cut -c1-40
+          echo ".env created:"
+          cat .env | cut -c1-50
+          echo "URL length: ${#URL}"
 
       - name: Install Tauri CLI
         run: npm install -g @tauri-apps/cli@latest
+
+      - name: Sanitize secrets
+        shell: bash
+        id: sanitize
+        run: |
+          echo "url=$(echo "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" | tr -d '[:space:]' | tr -d '"' | tr -d "'")" >> "$GITHUB_OUTPUT"
+          echo "key=$(echo "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" | tr -d '\r\n' | tr -d '"' | tr -d "'" | xargs)" >> "$GITHUB_OUTPUT"
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ steps.sanitize.outputs.url }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.sanitize.outputs.key }}
           NEXT_PUBLIC_APP_URL: "https://chatterbox-devs.vercel.app"
         with:
           tagName: latest
