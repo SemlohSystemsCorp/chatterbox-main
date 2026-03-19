@@ -2,14 +2,12 @@ name: Release Desktop App
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Release version (e.g. 0.1.0)"
-        required: true
-        default: "0.1.0"
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -72,14 +70,13 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         with:
-          tagName: v__VERSION__
-          releaseName: "Chatterbox v__VERSION__"
+          tagName: latest
+          releaseName: "Chatterbox Desktop"
           releaseBody: |
-            Download the desktop app for your platform:
+            Latest desktop build from main branch.
 
             **macOS**
             - Apple Silicon (M1/M2/M3): `Chatterbox_aarch64.dmg`
@@ -90,4 +87,5 @@ jobs:
             - MSI: `Chatterbox_x64_en-US.msi`
           releaseDraft: false
           prerelease: false
+          updatedReleaseBody: true
           args: ${{ matrix.args }}
