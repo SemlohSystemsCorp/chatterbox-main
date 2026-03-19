@@ -8,6 +8,7 @@ import { CreateChannelModal } from "@/components/modals/create-channel-modal";
 import { InviteModal } from "@/components/modals/invite-modal";
 import { GroupDmModal } from "@/components/modals/group-dm-modal";
 import { SearchModal } from "@/components/modals/search-modal";
+import { DmInfoModal } from "@/components/modals/dm-info-modal";
 import { useScheduledMessageWatcher } from "@/hooks/use-scheduled-message-watcher";
 import { ChatSidebar, type SidebarCall, type SidebarConversation } from "@/components/chat/chat-sidebar";
 import { MessageComposer } from "@/components/chat/message-composer";
@@ -152,6 +153,7 @@ export function DmPageClient({
   const [groupDmOpen, setGroupDmOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [createPollOpen, setCreatePollOpen] = useState(false);
+  const [dmInfoOpen, setDmInfoOpen] = useState(false);
   const [translatedMessages, setTranslatedMessages] = useState<Record<string, string>>({});
   const [translatingId, setTranslatingId] = useState<string | null>(null);
 
@@ -556,6 +558,19 @@ export function DmPageClient({
           if (updated.ended_at) {
             setLiveActiveCall((prev) => (prev?.id === updated.id ? null : prev));
           }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "calls",
+          filter: `conversation_id=eq.${conversation.id}`,
+        },
+        (payload) => {
+          const deleted = payload.old as { id: string };
+          setLiveActiveCall((prev) => (prev?.id === deleted.id ? null : prev));
         }
       )
       .subscribe();
@@ -1422,9 +1437,15 @@ export function DmPageClient({
                   : "?"}
               </div>
             )}
-            <h1 className="flex-1 text-[14px] font-semibold text-white">
-              {displayName}
-            </h1>
+            <button
+              onClick={() => setDmInfoOpen(true)}
+              className="flex min-w-0 flex-1 items-center gap-1.5 rounded-[6px] px-1.5 py-1 transition-colors hover:bg-[#1a1a1a]"
+            >
+              <h1 className="truncate text-[14px] font-semibold text-white">
+                {displayName}
+              </h1>
+              <ChevronDown className="h-3 w-3 shrink-0 text-[#555]" />
+            </button>
             <div className="flex items-center gap-0.5">
               {!isSelfDm && (
                 <Tooltip label="Start a call">
@@ -1800,6 +1821,13 @@ export function DmPageClient({
         open={createPollOpen}
         onClose={() => setCreatePollOpen(false)}
         conversationId={conversation.id}
+      />
+      <DmInfoModal
+        open={dmInfoOpen}
+        onClose={() => setDmInfoOpen(false)}
+        conversation={conversation}
+        currentUserId={user.id}
+        displayName={displayName}
       />
     </div>
   );

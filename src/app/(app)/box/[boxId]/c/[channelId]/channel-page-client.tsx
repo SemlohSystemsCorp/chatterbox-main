@@ -871,6 +871,19 @@ export function ChannelPageClient({
           }
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "calls",
+          filter: `channel_id=eq.${channel.id}`,
+        },
+        (payload) => {
+          const deleted = payload.old as { id: string };
+          setLiveActiveCall((prev) => (prev?.id === deleted.id ? null : prev));
+        }
+      )
       .subscribe();
 
     return () => {

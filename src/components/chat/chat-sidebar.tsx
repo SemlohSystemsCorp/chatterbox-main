@@ -142,6 +142,14 @@ export function ChatSidebar({
           }
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "calls" },
+        (payload) => {
+          const deleted = payload.old as { id: string };
+          setActiveCalls((prev) => prev.filter((c) => c.id !== deleted.id));
+        }
+      )
       .subscribe();
 
     return () => {
