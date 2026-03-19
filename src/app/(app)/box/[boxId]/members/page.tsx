@@ -22,7 +22,7 @@ export default async function MembersPage({
 
   const [boxes, members] = await Promise.all([
     getUserBoxes(supabase, user.id),
-    getBoxMembers(supabase, box.id),
+    getBoxMembers(box.id),
   ]);
 
   return (

@@ -43,7 +43,7 @@ export default async function BoxAdminPage({
   const [boxes, channels, members] = await Promise.all([
     getUserBoxes(supabase, user.id),
     getBoxChannels(supabase, box.id),
-    getBoxMembers(supabase, box.id),
+    getBoxMembers(box.id),
   ]);
 
   return (

@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 
 export const getAuthUser = cache(async function getAuthUser() {
@@ -296,8 +297,9 @@ export async function getUnreadCountsForUser(
   return counts;
 }
 
-export async function getBoxMembers(supabase: Awaited<ReturnType<typeof createClient>>, boxId: string) {
-  const { data: members } = await supabase
+export async function getBoxMembers(boxId: string) {
+  // Use admin client to bypass RLS — callers always verify box membership first
+  const { data: members } = await supabaseAdmin
     .from("box_members")
     .select("id, user_id, role, joined_at, profiles(id, email, full_name, avatar_url, status, username, status_text, status_emoji, status_expires_at)")
     .eq("box_id", boxId)

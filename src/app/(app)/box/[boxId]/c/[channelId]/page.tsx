@@ -62,7 +62,7 @@ export default async function ChannelPage({
   const [boxes, channels, members, channelMembers, conversations] = await Promise.all([
     getUserBoxes(supabase, user.id),
     getBoxChannels(supabase, box.id),
-    getBoxMembers(supabase, box.id),
+    getBoxMembers(box.id),
     channel.is_private ? getChannelMembers(supabase, channel.id) : Promise.resolve([]),
     getUserConversations(supabase, user.id),
   ]);

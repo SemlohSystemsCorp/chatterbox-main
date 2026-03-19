@@ -65,7 +65,7 @@ export default async function DmPage({
     if (box) {
       [channels, members] = await Promise.all([
         getBoxChannels(supabase, box.id),
-        getBoxMembers(supabase, box.id),
+        getBoxMembers(box.id),
       ]);
     }
   }

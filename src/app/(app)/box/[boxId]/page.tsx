@@ -32,7 +32,7 @@ export default async function BoxPage({
   const [boxes, channels, members] = await Promise.all([
     getUserBoxes(supabase, user.id),
     getBoxChannels(supabase, box.id),
-    getBoxMembers(supabase, box.id),
+    getBoxMembers(box.id),
   ]);
 
   // Fetch active calls across all box channels

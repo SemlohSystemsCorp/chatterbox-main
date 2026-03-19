@@ -45,7 +45,7 @@ export default async function IntegrationsPage({
       .select("*, integrations(name)")
       .eq("workspace_id", box.id)
       .eq("enabled", true),
-    getBoxMembers(supabase, box.id),
+    getBoxMembers(box.id),
   ]);
 
   const integrations = integrationsResult.data ?? [];
