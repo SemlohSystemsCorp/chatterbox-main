@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --port 3000",
     "build": "next build",
-    "build:standalone": "bash scripts/prepare-standalone.sh",
+    "build:standalone": "node scripts/prepare-standalone.mjs",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
