@@ -16,6 +16,7 @@ import {
 } from "@daily-co/daily-react";
 import { UnmuteIcon as Mic, MuteIcon as MicOff, DeviceCameraVideoIcon as Video, EyeClosedIcon as VideoOff, NoEntryIcon as PhoneOff, DeviceDesktopIcon as Monitor, ScreenNormalIcon as MonitorOff, PeopleIcon as Users, CommentDiscussionIcon as MessageSquare, PaperAirplaneIcon as Send, XIcon as X } from "@primer/octicons-react";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 
 interface CallData {
   id: string;
@@ -409,7 +410,7 @@ function CallUI({
   if (joinState !== "joined") {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-3 bg-[#0a0a0a]">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#333] border-t-white" />
+        <Spinner size="lg" />
         <p className="text-[13px] text-[#888]">Joining call...</p>
       </div>
     );

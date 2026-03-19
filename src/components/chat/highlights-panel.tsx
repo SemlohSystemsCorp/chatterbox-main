@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { XIcon as X, LoopIcon as Loader2, AlertFillIcon as AlertTriangle, CheckboxIcon as CheckSquare, QuestionIcon as HelpCircle, MentionIcon as AtSign, StarIcon as Star, ZapIcon as Zap, NoteIcon as Newspaper } from "@primer/octicons-react";
+import { XIcon as X, AlertFillIcon as AlertTriangle, CheckboxIcon as CheckSquare, QuestionIcon as HelpCircle, MentionIcon as AtSign, StarIcon as Star, ZapIcon as Zap, NoteIcon as Newspaper } from "@primer/octicons-react";
 import { Markdown } from "@/components/ui/markdown";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 
 interface Highlight {
   category: string;
@@ -155,12 +156,7 @@ export function HighlightsPanel({
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 py-3">
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-[#555]" />
-          <span className="text-[12px] text-[#555]">
-            Analyzing unread messages...
-          </span>
-        </div>
+        <Spinner size="xs" label="Analyzing unread messages..." className="text-[#555]" />
       ) : (
         <div className="space-y-1.5">
           {highlights.map((h, i) => {
@@ -216,12 +212,7 @@ export function HighlightsPanel({
           </div>
           <div className="max-h-[300px] overflow-auto px-3 py-2.5">
             {digestLoading ? (
-              <div className="flex items-center gap-2 py-4">
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-[#555]" />
-                <span className="text-[12px] text-[#555]">
-                  Generating catch-up digest...
-                </span>
-              </div>
+              <Spinner size="xs" label="Generating catch-up digest..." className="text-[#555]" />
             ) : (
               <Markdown className="text-[12px] leading-[20px]">
                 {digestContent ?? ""}

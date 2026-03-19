@@ -33,6 +33,7 @@ import { showPushNotification } from "@/lib/notifications";
 import { parseSlashCommand, executeCommand } from "@/lib/slash-commands";
 import { MemberProfileCard } from "@/components/chat/member-profile-card";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 import { usePresence } from "@/hooks/use-presence";
 import { useTyping } from "@/hooks/use-typing";
 import {
@@ -130,24 +131,64 @@ function sendMessageNotifications(
     mentionedHandles.add(match[1].toLowerCase());
   }
 
-  // Find mentioned member IDs — match against username or email prefix
-  const mentionedIds = members
-    .filter((m) => {
-      const handle = (m.username || m.email.split("@")[0]).toLowerCase();
-      return mentionedHandles.has(handle);
-    })
-    .map((m) => m.user_id)
-    .filter((id) => id !== sender.id);
+  // Check for special group mentions
+  const hasAll = mentionedHandles.has("all") || mentionedHandles.has("channel");
+  const hasHere = mentionedHandles.has("here");
+
+  // Remove special handles so they don't match individual users
+  mentionedHandles.delete("all");
+  mentionedHandles.delete("here");
+  mentionedHandles.delete("channel");
+
+  let notifyIds: string[];
+
+  if (hasAll) {
+    // @all or @channel — notify every member except the sender
+    notifyIds = members
+      .map((m) => m.user_id)
+      .filter((id) => id !== sender.id);
+  } else if (hasHere) {
+    // @here — notify members with online/active status (fall back to all if no status tracking)
+    const onlineIds = members
+      .filter((m) => m.status === "online" || m.status === "active")
+      .map((m) => m.user_id)
+      .filter((id) => id !== sender.id);
+    // Also include individually mentioned users
+    const individualIds = members
+      .filter((m) => {
+        const handle = (m.username || m.email.split("@")[0]).toLowerCase();
+        return mentionedHandles.has(handle);
+      })
+      .map((m) => m.user_id)
+      .filter((id) => id !== sender.id);
+    notifyIds = [...new Set([...onlineIds, ...individualIds])];
+  } else {
+    // Individual mentions only
+    notifyIds = members
+      .filter((m) => {
+        const handle = (m.username || m.email.split("@")[0]).toLowerCase();
+        return mentionedHandles.has(handle);
+      })
+      .map((m) => m.user_id)
+      .filter((id) => id !== sender.id);
+  }
+
+  // Determine notification title based on mention type
+  const mentionTitle = hasAll
+    ? `${sender.fullName} mentioned @all in #${channel.name}`
+    : hasHere
+    ? `${sender.fullName} mentioned @here in #${channel.name}`
+    : `${sender.fullName} mentioned you in #${channel.name}`;
 
   // Send mention notifications
-  if (mentionedIds.length > 0) {
+  if (notifyIds.length > 0) {
     fetch("/api/notifications/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        user_ids: mentionedIds,
+        user_ids: notifyIds,
         type: "mention",
-        title: `${sender.fullName} mentioned you in #${channel.name}`,
+        title: mentionTitle,
         body: content.slice(0, 200),
         box_id: box.id,
         channel_id: channel.id,
@@ -159,7 +200,7 @@ function sendMessageNotifications(
   // Send reply notification to the parent message author
   if (replyTo && replyTo.sender_id !== sender.id) {
     // Don't double-notify if already mentioned
-    if (!mentionedIds.includes(replyTo.sender_id)) {
+    if (!notifyIds.includes(replyTo.sender_id)) {
       fetch("/api/notifications/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1943,8 +1984,8 @@ export function ChannelPageClient({
         >
           <div className="px-4 py-4">
             {loadingMore && (
-              <div className="flex justify-center py-3">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#333] border-t-white" />
+              <div className="py-3">
+                <Spinner center />
               </div>
             )}
             {!hasMore && messages.length > 0 && (

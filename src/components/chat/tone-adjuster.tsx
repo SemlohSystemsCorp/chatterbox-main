@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { SparkleIcon as Wand2, LoopIcon as Loader2, UndoIcon as Undo2 } from "@primer/octicons-react";
+import { SparkleIcon as Wand2, UndoIcon as Undo2 } from "@primer/octicons-react";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 
 interface ToneAdjusterProps {
   text: string;
@@ -86,7 +87,7 @@ export function ToneAdjuster({ text, onRewrite }: ToneAdjusterProps) {
             className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white disabled:opacity-50"
           >
             {loading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <Spinner size="xs" />
             ) : (
               <Wand2 className="h-3.5 w-3.5" />
             )}

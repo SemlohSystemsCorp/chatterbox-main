@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -84,10 +84,14 @@ export async function POST(request: NextRequest) {
   }
 
   // Increment invite uses
-  await supabase
+  const { error: usesError } = await supabase
     .from("invites")
     .update({ uses: invite.uses + 1 })
     .eq("id", invite.id);
+
+  if (usesError) {
+    console.error("[invites/join] failed to increment uses:", usesError.message);
+  }
 
   // Insert "member_joined" events into all public channels of this box
   const { data: profile } = await supabase
@@ -114,12 +118,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Use service role to bypass RLS for DM creation —
+  // Use admin client to bypass RLS for DM creation —
   // the new member can't query other users' conversation_participants yet
-  const admin = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const admin = supabaseAdmin;
 
   // Create self-DM (Saved Messages)
   const { data: selfConvos } = await admin
@@ -225,12 +226,9 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Use service role client — the user isn't a member yet,
+  // Use admin client — the user isn't a member yet,
   // so RLS on boxes/box_members/channels would block the preview.
-  const admin = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const admin = supabaseAdmin;
 
   const { data: invite } = await admin
     .from("invites")

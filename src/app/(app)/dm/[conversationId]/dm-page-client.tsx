@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { ChevronDownIcon as ChevronDown, XIcon as X, CommentDiscussionIcon as MessageSquare, SearchIcon as Search, DeviceMobileIcon as Phone, BookmarkIcon as Bookmark, TasklistIcon as ListTodo, PersonIcon as User } from "@primer/octicons-react";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
 import { CreateChannelModal } from "@/components/modals/create-channel-modal";
 import { InviteModal } from "@/components/modals/invite-modal";
@@ -211,7 +212,7 @@ export function DmPageClient({
         );
       }
     } finally {
-      setStartingCall(true);
+      setStartingCall(false);
     }
   }
 
@@ -1525,8 +1526,8 @@ export function DmPageClient({
         <div ref={scrollContainerRef} className="relative flex-1 overflow-auto">
           <div className="px-4 py-4">
             {loadingMore && (
-              <div className="flex justify-center py-3">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#333] border-t-white" />
+              <div className="py-3">
+                <Spinner center />
               </div>
             )}
             {!hasMore && messages.length > 0 && (

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { PlusIcon as Plus, TrashIcon as Trash2, GrabberIcon as GripVertical } from "@primer/octicons-react";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 
 interface Todo {
   id: string;
@@ -82,7 +83,7 @@ export function TodosPanel() {
   if (loading) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#333] border-t-white" />
+        <Spinner />
       </div>
     );
   }

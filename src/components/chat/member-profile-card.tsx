@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { CommentDiscussionIcon as MessageSquare, XIcon as X, LocationIcon as MapPin, BriefcaseIcon as Briefcase, GlobeIcon as Globe, ClockIcon as Clock, CalendarIcon as Calendar, CircleIcon as Circle, LoopIcon as Loader2, PersonIcon as User, DeviceMobileIcon as Phone, MailIcon as Mail } from "@primer/octicons-react";
+import { CommentDiscussionIcon as MessageSquare, XIcon as X, LocationIcon as MapPin, BriefcaseIcon as Briefcase, GlobeIcon as Globe, ClockIcon as Clock, CalendarIcon as Calendar, CircleIcon as Circle, PersonIcon as User, DeviceMobileIcon as Phone, MailIcon as Mail } from "@primer/octicons-react";
 import { useRouter } from "next/navigation";
 import { getInitials, type SenderData } from "@/lib/chat-helpers";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 
 // ── Full profile data fetched from DB ──
 
@@ -357,7 +358,7 @@ function UserProfileModal({
       <div className="w-full max-w-[440px] rounded-[12px] border border-[#1a1a1a] bg-[#111] shadow-2xl">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-5 w-5 animate-spin text-[#555]" />
+            <Spinner className="text-[#555]" />
           </div>
         ) : !profile ? (
           <div className="py-20 text-center text-[13px] text-[#555]">

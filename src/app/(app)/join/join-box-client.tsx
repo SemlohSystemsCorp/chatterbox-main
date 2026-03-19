@@ -6,6 +6,7 @@ import { ArrowLeftIcon as ArrowLeft, LinkIcon, AlertIcon as AlertCircle, HashIco
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 
 interface InviteInfo {
   code: string;
@@ -217,7 +218,7 @@ export function JoinBoxClient() {
           {/* Loading View */}
           {view === "input" && loading && (
             <div className="mt-6 flex items-center justify-center">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#333] border-t-white" />
+              <Spinner />
             </div>
           )}
 

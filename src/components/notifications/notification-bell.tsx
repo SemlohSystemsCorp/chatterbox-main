@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { BellIcon as Bell, ChecklistIcon as CheckCheck, XIcon as X, LoopIcon as Loader2, MentionIcon as AtSign, CommentDiscussionIcon as MessageSquare, ReplyIcon as Reply, SmileyIcon as Smile, MailIcon as Mail, PinIcon as Pin, SparklesFillIcon as Sparkles, ArrowLeftIcon as ArrowLeft } from "@primer/octicons-react";
+import { BellIcon as Bell, ChecklistIcon as CheckCheck, XIcon as X, MentionIcon as AtSign, CommentDiscussionIcon as MessageSquare, ReplyIcon as Reply, SmileyIcon as Smile, MailIcon as Mail, PinIcon as Pin, SparklesFillIcon as Sparkles, ArrowLeftIcon as ArrowLeft } from "@primer/octicons-react";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { initNotifications, showPushNotification } from "@/lib/notifications";
@@ -268,7 +269,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                   <p className="text-[13px] font-medium text-[#888]">
                     Summarizing notifications...
                   </p>
-                  <Loader2 className="mt-2 h-4 w-4 animate-spin text-[#555]" />
+                  <Spinner size="sm" className="mt-2 text-[#555]" />
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -289,7 +290,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
           <div className="max-h-[440px] overflow-auto">
             {loading && notifications.length === 0 ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-4 w-4 animate-spin text-[#555]" />
+                <Spinner size="sm" className="text-[#555]" />
               </div>
             ) : notifications.length === 0 ? (
               <div className="py-12 text-center">

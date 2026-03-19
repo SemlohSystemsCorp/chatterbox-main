@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { XIcon as X, SearchIcon as Search, CheckIcon as Check, LoopIcon as Loader2, PeopleIcon as Users } from "@primer/octicons-react";
+import { XIcon as X, SearchIcon as Search, CheckIcon as Check, PeopleIcon as Users } from "@primer/octicons-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 
 interface Member {
   user_id: string;
@@ -270,7 +271,7 @@ export function GroupDmModal({
             >
               {creating ? (
                 <>
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  <Spinner size="xs" className="mr-1.5" />
                   Creating...
                 </>
               ) : (

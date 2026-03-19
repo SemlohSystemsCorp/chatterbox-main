@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { XIcon as X, SearchIcon as Search, LoopIcon as Loader2 } from "@primer/octicons-react";
+import { XIcon as X, SearchIcon as Search } from "@primer/octicons-react";
 import { useRouter } from "next/navigation";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 
 interface SearchResult {
   id: string;
@@ -135,7 +136,9 @@ export function NewDmModal({ open, onClose, currentUserId }: NewDmModalProps) {
               className="h-10 w-full rounded-[8px] border border-[#1a1a1a] bg-[#0a0a0a] pl-10 pr-3 text-[14px] text-white placeholder:text-[#444] focus:border-[#333] focus:outline-none"
             />
             {searching && (
-              <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[#555]" />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <Spinner size="sm" className="text-[#555]" />
+              </div>
             )}
           </div>
         </div>
@@ -200,7 +203,7 @@ export function NewDmModal({ open, onClose, currentUserId }: NewDmModalProps) {
                   </div>
                 </div>
                 {isStarting && (
-                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#555]" />
+                  <Spinner size="sm" className="shrink-0 text-[#555]" />
                 )}
               </button>
             );

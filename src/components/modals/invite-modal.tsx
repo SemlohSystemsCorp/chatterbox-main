@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { XIcon as X, CopyIcon as Copy, CheckIcon as Check, LinkIcon, MailIcon as Mail, PlusIcon as Plus, LoopIcon as Loader2 } from "@primer/octicons-react";
+import { XIcon as X, CopyIcon as Copy, CheckIcon as Check, LinkIcon, MailIcon as Mail, PlusIcon as Plus } from "@primer/octicons-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 
 interface InviteModalProps {
   open: boolean;
@@ -76,7 +77,7 @@ export function InviteModal({ open, onClose, boxId, boxName }: InviteModalProps)
 
   function handleCopy() {
     if (!inviteCode) return;
-    const link = `https://getchatterbox.app/invite/${inviteCode}`;
+    const link = `${process.env.NEXT_PUBLIC_APP_URL || "https://getchatterbox.app"}/invite/${inviteCode}`;
     navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -146,7 +147,7 @@ export function InviteModal({ open, onClose, boxId, boxName }: InviteModalProps)
   if (!open) return null;
 
   const inviteLink = inviteCode
-    ? `https://getchatterbox.app/invite/${inviteCode}`
+    ? `${process.env.NEXT_PUBLIC_APP_URL || "https://getchatterbox.app"}/invite/${inviteCode}`
     : "";
 
   return (
@@ -182,8 +183,8 @@ export function InviteModal({ open, onClose, boxId, boxName }: InviteModalProps)
           )}
 
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#333] border-t-white" />
+            <div className="py-8">
+              <Spinner center />
             </div>
           ) : inviteCode ? (
             <>
@@ -263,7 +264,7 @@ export function InviteModal({ open, onClose, boxId, boxName }: InviteModalProps)
                   >
                     {sending ? (
                       <>
-                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        <Spinner size="xs" className="mr-1.5" />
                         Sending...
                       </>
                     ) : (

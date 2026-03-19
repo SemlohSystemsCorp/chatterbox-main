@@ -7,6 +7,7 @@ import { ArrowLeftIcon as ArrowLeft, CheckIcon as Check, ZapIcon as Zap, Organiz
 import { Tooltip } from "@/components/ui/tooltip";
 import { AppShell } from "@/components/layout/app-shell";
 import { TopBar } from "@/components/layout/top-bar";
+import { Spinner } from "@/components/ui/spinner";
 
 interface BoxData {
   id: string;
@@ -238,7 +239,7 @@ export function CheckoutClient({ user, boxes }: CheckoutClientProps) {
             >
               {loading ? (
                 <>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black" />
+                  <Spinner size="sm" variant="dark" />
                   Redirecting...
                 </>
               ) : (

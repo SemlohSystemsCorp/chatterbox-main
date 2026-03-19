@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { XIcon as X, SparklesFillIcon as Sparkles, LoopIcon as Loader2, SyncIcon as RefreshCw } from "@primer/octicons-react";
+import { XIcon as X, SparklesFillIcon as Sparkles, SyncIcon as RefreshCw } from "@primer/octicons-react";
 import { Markdown } from "@/components/ui/markdown";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 
 interface SummaryModalProps {
   open: boolean;
@@ -111,11 +112,8 @@ export function SummaryModal({
         {/* Content */}
         <div className="max-h-[500px] overflow-auto px-4 py-4">
           {loading ? (
-            <div className="flex items-center justify-center gap-2 py-12">
-              <Loader2 className="h-4 w-4 animate-spin text-[#555]" />
-              <span className="text-[13px] text-[#555]">
-                Summarizing {channelName}...
-              </span>
+            <div className="py-12">
+              <Spinner size="sm" label={`Summarizing ${channelName}...`} center className="text-[#555]" />
             </div>
           ) : (
             <>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { XIcon as X, PlusIcon as Plus, TrashIcon as Trash2 } from "@primer/octicons-react";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 
 interface Todo {
   id: string;
@@ -146,8 +147,8 @@ export function TodoModal({ open, onClose }: TodoModalProps) {
         {/* List */}
         <div className="flex-1 overflow-auto px-5 py-3">
           {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#333] border-t-white" />
+            <div className="py-8">
+              <Spinner center />
             </div>
           ) : active.length === 0 && completed.length === 0 ? (
             <div className="py-8 text-center text-[13px] text-[#444]">

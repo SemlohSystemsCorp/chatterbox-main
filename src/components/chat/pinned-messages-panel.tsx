@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { PinIcon as Pin, XIcon as X, LoopIcon as Loader2 } from "@primer/octicons-react";
+import { PinIcon as Pin, XIcon as X } from "@primer/octicons-react";
 import { Markdown, segmentContent } from "@/components/ui/markdown";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 import { getMediaType } from "@/components/modals/media-preview-modal";
 import { formatTime, formatDate, getInitials } from "@/lib/chat-helpers";
 import type { PinnedMessage } from "@/types";
@@ -69,9 +70,8 @@ export function PinnedMessagesPanel({
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 px-4 pb-3">
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-[#555]" />
-          <span className="text-[12px] text-[#555]">Loading pinned messages...</span>
+        <div className="px-4 pb-3">
+          <Spinner size="xs" label="Loading pinned messages..." className="text-[#555]" />
         </div>
       ) : pins.length === 0 ? (
         <div className="px-4 pb-3">

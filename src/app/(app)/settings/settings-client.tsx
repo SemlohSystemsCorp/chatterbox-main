@@ -3,8 +3,9 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeftIcon as ArrowLeft, PersonIcon as User, ShieldIcon as Shield, PaintbrushIcon as Palette, BellIcon as Bell, CommentDiscussionIcon as MessageSquare, LockIcon as Lock, AccessibilityIcon as Accessibility, GlobeIcon as Globe, DeviceCameraVideoIcon as Video, ToolsIcon as Wrench, CheckCircleIcon as Save, CheckIcon as Check, DeviceCameraIcon as Camera, LoopIcon as Loader2, TrashIcon as Trash2 } from "@primer/octicons-react";
+import { ArrowLeftIcon as ArrowLeft, PersonIcon as User, ShieldIcon as Shield, PaintbrushIcon as Palette, BellIcon as Bell, CommentDiscussionIcon as MessageSquare, LockIcon as Lock, AccessibilityIcon as Accessibility, GlobeIcon as Globe, DeviceCameraVideoIcon as Video, ToolsIcon as Wrench, CheckCircleIcon as Save, CheckIcon as Check, DeviceCameraIcon as Camera, TrashIcon as Trash2 } from "@primer/octicons-react";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 import { AppShell } from "@/components/layout/app-shell";
 import { TopBar } from "@/components/layout/top-bar";
 import { useSettingsStore, type Settings } from "@/stores/settings-store";
@@ -428,7 +429,7 @@ export function SettingsClient({ user, boxes }: SettingsClientProps) {
                     )}
                     {avatarUploading && (
                       <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60">
-                        <Loader2 className="h-5 w-5 animate-spin text-white" />
+                        <Spinner className="text-white" />
                       </div>
                     )}
                   </div>

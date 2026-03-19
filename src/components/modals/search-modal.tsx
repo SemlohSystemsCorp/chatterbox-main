@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { SearchIcon as Search, XIcon as X, HashIcon as Hash, CommentDiscussionIcon as MessageSquare, SparklesFillIcon as Sparkles, ArrowRightIcon as ArrowRight, LoopIcon as Loader2 } from "@primer/octicons-react";
+import { SearchIcon as Search, XIcon as X, HashIcon as Hash, CommentDiscussionIcon as MessageSquare, SparklesFillIcon as Sparkles, ArrowRightIcon as ArrowRight } from "@primer/octicons-react";
 import { Markdown } from "@/components/ui/markdown";
 import { useRouter } from "next/navigation";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 
 interface SearchResult {
   id: string;
@@ -506,9 +507,8 @@ export function SearchModal({ open, onClose, boxShortId, boxId }: SearchModalPro
               )}
 
               {aiLoading && (
-                <div className="flex items-center justify-center gap-2 px-4 py-8">
-                  <Loader2 className="h-4 w-4 animate-spin text-[#555]" />
-                  <span className="text-[13px] text-[#555]">Thinking...</span>
+                <div className="px-4 py-8">
+                  <Spinner size="sm" label="Thinking..." center className="text-[#555]" />
                 </div>
               )}
 

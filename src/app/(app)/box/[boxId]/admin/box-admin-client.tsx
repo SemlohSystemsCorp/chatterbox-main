@@ -22,6 +22,7 @@ import {
 import { AppShell } from "@/components/layout/app-shell";
 import { TopBar } from "@/components/layout/top-bar";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 
 // ── Types ──
 
@@ -737,7 +738,7 @@ export function BoxAdminClient({
 
                 {logsLoading && logs.length === 0 ? (
                   <div className="flex flex-col items-center gap-3 py-16">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#276ef1] border-t-transparent" />
+                    <Spinner className="text-[#276ef1]" />
                     <span className="text-[13px] text-[#555]">
                       Loading audit logs...
                     </span>
@@ -804,7 +805,7 @@ export function BoxAdminClient({
                         className="mt-3 flex w-full items-center justify-center gap-2 rounded-[8px] border border-[#1a1a1a] py-2.5 text-[13px] text-[#666] transition-colors hover:border-[#2a2a2a] hover:text-white disabled:opacity-50"
                       >
                         {logsLoading ? (
-                          <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          <Spinner size="xs" />
                         ) : (
                           "Load more"
                         )}
@@ -966,7 +967,7 @@ export function BoxAdminClient({
 
                 {statsLoading ? (
                   <div className="flex flex-col items-center gap-3 py-16">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#276ef1] border-t-transparent" />
+                    <Spinner className="text-[#276ef1]" />
                     <span className="text-[13px] text-[#555]">
                       Loading analytics...
                     </span>
