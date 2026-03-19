@@ -122,6 +122,7 @@ export function DmPageClient({
   const [liveChannels, setLiveChannels] = useState<SidebarChannel[]>(channels);
   const [liveMembers, setLiveMembers] = useState<MemberData[]>(members);
   const [liveConversations, setLiveConversations] = useState<SidebarConversation[]>(conversations);
+  const [liveActiveCall, setLiveActiveCall] = useState<ActiveCallData | null>(activeCall ?? null);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -521,6 +522,47 @@ export function DmPageClient({
       supabase.removeChannel(subscription);
     };
   }, [conversation.id, user.id]);
+
+  // ── Realtime: active call ──
+  useEffect(() => {
+    const supabase = createClient();
+    const callSub = supabase
+      .channel(`dm-call-${conversation.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "calls",
+          filter: `conversation_id=eq.${conversation.id}`,
+        },
+        (payload) => {
+          const newCall = payload.new as { id: string; room_name: string; started_by: string; started_at: string; ended_at: string | null };
+          if (!newCall.ended_at) {
+            setLiveActiveCall({ id: newCall.id, room_name: newCall.room_name, started_by: newCall.started_by, started_at: newCall.started_at });
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "calls",
+          filter: `conversation_id=eq.${conversation.id}`,
+        },
+        (payload) => {
+          const updated = payload.new as { id: string; ended_at: string | null };
+          if (updated.ended_at) {
+            setLiveActiveCall((prev) => (prev?.id === updated.id ? null : prev));
+          }
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(callSub);
+    };
+  }, [conversation.id]);
 
   // ── Mark as read (throttled) ──
   const markAsRead = useCallback(() => {
@@ -1436,7 +1478,7 @@ export function DmPageClient({
         </div>
 
         {/* Active call banner */}
-        {activeCall && !isSelfDm && (
+        {liveActiveCall && !isSelfDm && (
           <button
             onClick={handleStartCall}
             disabled={startingCall}

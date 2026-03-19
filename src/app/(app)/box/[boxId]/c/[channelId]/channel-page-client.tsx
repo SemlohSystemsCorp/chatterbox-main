@@ -203,6 +203,7 @@ export function ChannelPageClient({
   const [liveChannels, setLiveChannels] = useState<SidebarChannel[]>(channels);
   const [liveMembers, setLiveMembers] = useState<MemberData[]>(members);
   const [liveConversations, setLiveConversations] = useState<SidebarConversation[]>(conversations);
+  const [liveActiveCall, setLiveActiveCall] = useState<ActiveCallData | null>(activeCall ?? null);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -837,10 +838,46 @@ export function ChannelPageClient({
       )
       .subscribe();
 
+    // Subscribe to call start/end for the active call banner
+    const callSub = supabase
+      .channel(`channel-call-${channel.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "calls",
+          filter: `channel_id=eq.${channel.id}`,
+        },
+        (payload) => {
+          const newCall = payload.new as { id: string; room_name: string; started_by: string; started_at: string; ended_at: string | null };
+          if (!newCall.ended_at) {
+            setLiveActiveCall({ id: newCall.id, room_name: newCall.room_name, started_by: newCall.started_by, started_at: newCall.started_at });
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "calls",
+          filter: `channel_id=eq.${channel.id}`,
+        },
+        (payload) => {
+          const updated = payload.new as { id: string; ended_at: string | null };
+          if (updated.ended_at) {
+            setLiveActiveCall((prev) => (prev?.id === updated.id ? null : prev));
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(subscription);
       supabase.removeChannel(cursorSubscription);
       supabase.removeChannel(eventsSub);
+      supabase.removeChannel(callSub);
       if (otherChannelSub) supabase.removeChannel(otherChannelSub);
     };
   }, [channel.id, user.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1870,7 +1907,7 @@ export function ChannelPageClient({
         )}
 
         {/* Active call banner */}
-        {activeCall && (
+        {liveActiveCall && (
           <button
             onClick={handleStartCall}
             disabled={startingCall}
@@ -1958,7 +1995,7 @@ export function ChannelPageClient({
                     text = (
                       <>
                         <span className="font-medium text-[#ccc]">{actorName}</span> started a call
-                        {activeCall && activeCall.id === evt.metadata.call_id && (
+                        {liveActiveCall && liveActiveCall.id === evt.metadata.call_id && (
                           <button
                             onClick={handleStartCall}
                             disabled={startingCall}
