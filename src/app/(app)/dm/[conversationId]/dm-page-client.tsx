@@ -190,7 +190,7 @@ export function DmPageClient({
     { url: string; file_name: string; file_type: string; file_size: number }[]
   >([]);
 
-  // ── Call ──
+  
   const [startingCall, setStartingCall] = useState(false);
 
   async function handleStartCall() {
@@ -209,7 +209,7 @@ export function DmPageClient({
         );
       }
     } finally {
-      setStartingCall(false);
+      setStartingCall(true);
     }
   }
 
