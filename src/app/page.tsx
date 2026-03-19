@@ -790,6 +790,12 @@ export default function HomePage() {
             <p className="mt-2 text-[12px] text-[#444]">
               macOS 10.15+ &middot; Windows 10+
             </p>
+            {platform === "mac" && (
+              <p className="mt-2 max-w-sm text-[11px] leading-[16px] text-[#444]">
+                After opening the .dmg, drag Chatterbox to Applications. If macOS blocks the app,
+                go to System Settings &rarr; Privacy &amp; Security and click &ldquo;Open Anyway&rdquo;.
+              </p>
+            )}
           </div>
         </div>
       </section>

@@ -10,6 +10,86 @@ permissions:
   contents: write
 
 jobs:
+  build-macos:
+    strategy:
+      matrix:
+        include:
+          - runner: macos-latest
+            arch: aarch64
+            node_arch: arm64
+          - runner: macos-13
+            arch: x64
+            node_arch: x64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download Node.js binary
+        run: bash scripts/download-node.sh
+
+      - name: Create .env file
+        run: |
+          URL=$(echo "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" | tr -d '[:space:]' | tr -d '"' | tr -d "'")
+          KEY=$(echo "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" | tr -d '\r\n' | tr -d '"' | tr -d "'" | xargs)
+          printf 'NEXT_PUBLIC_SUPABASE_URL=%s\n' "$URL" > .env
+          printf 'NEXT_PUBLIC_SUPABASE_ANON_KEY=%s\n' "$KEY" >> .env
+          printf 'NEXT_PUBLIC_APP_URL=%s\n' "https://chatterbox-devs.vercel.app" >> .env
+          echo ".env created:"
+          cat .env | cut -c1-50
+          echo "URL length: ${#URL}"
+
+      - name: Sanitize secrets
+        id: sanitize
+        run: |
+          echo "url=$(echo "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" | tr -d '[:space:]' | tr -d '"' | tr -d "'")" >> "$GITHUB_OUTPUT"
+          echo "key=$(echo "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" | tr -d '\r\n' | tr -d '"' | tr -d "'" | xargs)" >> "$GITHUB_OUTPUT"
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ steps.sanitize.outputs.url }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.sanitize.outputs.key }}
+          NEXT_PUBLIC_APP_URL: "https://chatterbox-devs.vercel.app"
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          tagName: latest
+          releaseName: "Chatterbox Desktop"
+          releaseBody: |
+            Download the Chatterbox desktop app.
+
+            **macOS**
+            - Apple Silicon: `Chatterbox_aarch64.dmg`
+            - Intel: `Chatterbox_x64.dmg`
+
+            **Windows**
+            - Installer: `Chatterbox_x64-setup.exe`
+            - MSI: `Chatterbox_x64_en-US.msi`
+          releaseDraft: false
+          prerelease: false
+
   build-windows:
     runs-on: windows-latest
     steps:
@@ -70,11 +150,12 @@ jobs:
           releaseBody: |
             Download the Chatterbox desktop app.
 
+            **macOS**
+            - Apple Silicon: `Chatterbox_aarch64.dmg`
+            - Intel: `Chatterbox_x64.dmg`
+
             **Windows**
             - Installer: `Chatterbox_x64-setup.exe`
             - MSI: `Chatterbox_x64_en-US.msi`
-
-            **macOS**
-            - Build locally with `npm run tauri:build`
           releaseDraft: false
           prerelease: false
