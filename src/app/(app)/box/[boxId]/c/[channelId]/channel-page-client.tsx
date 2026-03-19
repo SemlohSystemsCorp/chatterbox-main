@@ -485,10 +485,10 @@ export function ChannelPageClient({
     inputRef.current?.focus();
   }
 
-  // Cmd+K / Ctrl+K to open search
+  // Cmd+F / Ctrl+F to open search
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      if ((e.metaKey || e.ctrlKey) && e.key === "f") {
         e.preventDefault();
         setSearchOpen(true);
       }
@@ -1783,7 +1783,7 @@ export function ChannelPageClient({
             >
               <Search className="h-3.5 w-3.5" />
               <kbd className="hidden rounded bg-[#0a0a0a] px-1 py-0.5 text-[10px] text-[#444] sm:inline">
-                ⌘K
+                ⌘F
               </kbd>
             </button>
             <div className="mx-0.5 h-4 w-px bg-[#1a1a1a]" />

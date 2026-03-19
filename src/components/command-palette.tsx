@@ -147,7 +147,7 @@ export function CommandPalette({ boxes, activeBoxId, onOpenSearch }: CommandPale
     id: "search-messages",
     label: "Search Messages",
     icon: Search,
-    shortcut: "/",
+    shortcut: "⌘ F",
     action: () => { close(); onOpenSearch?.(); },
     section: "Actions",
   });
@@ -169,7 +169,6 @@ export function CommandPalette({ boxes, activeBoxId, onOpenSearch }: CommandPale
     id: "show-shortcuts",
     label: "Keyboard Shortcuts",
     icon: Keyboard,
-    shortcut: "?",
     action: () => { setShowShortcuts(true); },
     section: "Actions",
   });
@@ -210,6 +209,14 @@ export function CommandPalette({ boxes, activeBoxId, onOpenSearch }: CommandPale
         return;
       }
 
+      // Cmd+F / Ctrl+F opens search (override browser find)
+      if ((e.metaKey || e.ctrlKey) && e.key === "f") {
+        e.preventDefault();
+        close();
+        onOpenSearch?.();
+        return;
+      }
+
       // Don't handle other shortcuts when in an input
       if (isInput) return;
 
@@ -217,21 +224,6 @@ export function CommandPalette({ boxes, activeBoxId, onOpenSearch }: CommandPale
       if (e.key === "Escape" && open) {
         e.preventDefault();
         close();
-        return;
-      }
-
-      // ? shows shortcuts
-      if (e.key === "?" && !open) {
-        e.preventDefault();
-        setOpen(true);
-        setShowShortcuts(true);
-        return;
-      }
-
-      // / opens search
-      if (e.key === "/" && !open) {
-        e.preventDefault();
-        onOpenSearch?.();
         return;
       }
 
@@ -299,8 +291,7 @@ export function CommandPalette({ boxes, activeBoxId, onOpenSearch }: CommandPale
 
   const shortcuts = [
     { keys: ["⌘", "K"], label: "Open command palette" },
-    { keys: ["/"], label: "Search messages" },
-    { keys: ["?"], label: "Show keyboard shortcuts" },
+    { keys: ["⌘", "F"], label: "Search messages" },
     { keys: ["G", "D"], label: "Go to Dashboard" },
     { keys: ["G", "S"], label: "Go to Settings" },
     { keys: ["G", "M"], label: "Go to Messages" },
@@ -426,9 +417,7 @@ export function CommandPalette({ boxes, activeBoxId, onOpenSearch }: CommandPale
               <kbd className="rounded bg-[#0a0a0a] px-1 py-0.5 text-[10px] text-[#555]">↑↓</kbd>{" "}
               navigate{" "}
               <kbd className="ml-2 rounded bg-[#0a0a0a] px-1 py-0.5 text-[10px] text-[#555]">Enter</kbd>{" "}
-              select{" "}
-              <kbd className="ml-2 rounded bg-[#0a0a0a] px-1 py-0.5 text-[10px] text-[#555]">?</kbd>{" "}
-              shortcuts
+              select
             </div>
           </>
         )}
