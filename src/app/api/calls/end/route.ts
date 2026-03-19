@@ -89,6 +89,16 @@ export async function POST(request: NextRequest) {
     } catch {
       // Room may have already expired
     }
+
+    // Clean up: delete participants then the call record
+    await supabase
+      .from("call_participants")
+      .delete()
+      .eq("call_id", call_id);
+    await supabase
+      .from("calls")
+      .delete()
+      .eq("id", call_id);
   }
 
   return NextResponse.json({ ended: !count || count === 0 });

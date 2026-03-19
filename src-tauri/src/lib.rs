@@ -22,7 +22,12 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_store::Builder::new().build())
         .manage(SidecarState::new(port))
-        .invoke_handler(tauri::generate_handler![commands::get_server_port])
+        .invoke_handler(tauri::generate_handler![
+            commands::get_server_port,
+            commands::autostart_is_enabled,
+            commands::autostart_enable,
+            commands::autostart_disable,
+        ])
         .setup(move |app| {
             let handle = app.handle().clone();
 

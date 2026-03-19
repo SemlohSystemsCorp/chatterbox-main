@@ -9,6 +9,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { TopBar } from "@/components/layout/top-bar";
 import { useSettingsStore, type Settings } from "@/stores/settings-store";
 import { createClient } from "@/lib/supabase/client";
+import { isTauri, isAutostartEnabled, enableAutostart, disableAutostart } from "@/lib/tauri";
 
 interface BoxData {
   id: string;
@@ -256,6 +257,30 @@ export function SettingsClient({ user, boxes }: SettingsClientProps) {
     useSettingsStore();
   const [activeSection, setActiveSection] = useState<Section>("profile");
   const [saved, setSaved] = useState(false);
+
+  // Autostart (desktop only)
+  const [autostartEnabled, setAutostartEnabled] = useState(false);
+  const [autostartLoading, setAutostartLoading] = useState(false);
+  useEffect(() => {
+    if (isTauri) {
+      isAutostartEnabled().then(setAutostartEnabled).catch(() => {});
+    }
+  }, []);
+  async function handleAutostartToggle(enabled: boolean) {
+    setAutostartLoading(true);
+    try {
+      if (enabled) {
+        await enableAutostart();
+      } else {
+        await disableAutostart();
+      }
+      setAutostartEnabled(enabled);
+    } catch {
+      // Revert on failure
+    } finally {
+      setAutostartLoading(false);
+    }
+  }
 
   // Avatar upload
   const [avatarUrl, setAvatarUrl] = useState<string | null>(user.avatarUrl);
@@ -820,6 +845,9 @@ export function SettingsClient({ user, boxes }: SettingsClientProps) {
                 <SectionDivider />
                 <SectionHeader title="Shortcuts & Startup" />
                 <Toggle label="Keyboard shortcuts" description="Enable global keyboard shortcuts" value={settings.keyboard_shortcuts_enabled} onChange={(v) => update("keyboard_shortcuts_enabled", v)} />
+                {isTauri && (
+                  <Toggle label="Launch on startup" description="Automatically open Chatterbox when you log in to your computer" value={autostartEnabled} onChange={handleAutostartToggle} />
+                )}
                 <Select label="Startup page" value={settings.startup_page} onChange={(v) => update("startup_page", v)} options={[
                   { value: "dashboard", label: "Dashboard" },
                   { value: "last_visited", label: "Last visited page" },

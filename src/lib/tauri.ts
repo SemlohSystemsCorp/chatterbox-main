@@ -52,3 +52,24 @@ export async function openExternal(url: string): Promise<void> {
     window.open(url, "_blank");
   }
 }
+
+/** Check if autostart on login is enabled (desktop only). */
+export async function isAutostartEnabled(): Promise<boolean> {
+  if (!isTauri) return false;
+  const { invoke } = await import("@tauri-apps/api/core");
+  return invoke<boolean>("autostart_is_enabled");
+}
+
+/** Enable autostart on login (desktop only). */
+export async function enableAutostart(): Promise<void> {
+  if (!isTauri) return;
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("autostart_enable");
+}
+
+/** Disable autostart on login (desktop only). */
+export async function disableAutostart(): Promise<void> {
+  if (!isTauri) return;
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("autostart_disable");
+}

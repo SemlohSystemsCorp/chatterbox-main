@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { resend, FROM_EMAIL } from "@/lib/resend";
 import { verificationCodeEmail } from "@/lib/email-templates";
 
@@ -7,11 +7,6 @@ function generateCode(): string {
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   return code;
 }
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 export async function POST(request: Request) {
   try {
