@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { HashIcon as Hash, LockIcon as Lock, PlusIcon as Plus, HubotIcon as Bot, CircleIcon as Circle, CommentDiscussionIcon as MessageSquare, DeviceMobileIcon as Phone, BookmarkIcon as Bookmark, PlugIcon as Plug } from "@primer/octicons-react";
+import { useRouter, usePathname } from "next/navigation";
+import { HashIcon as Hash, LockIcon as Lock, PlusIcon as Plus, HubotIcon as Bot, CircleIcon as Circle, CommentDiscussionIcon as MessageSquare, DeviceMobileIcon as Phone, BookmarkIcon as Bookmark, PlugIcon as Plug, GearIcon as Gear, PeopleIcon as People } from "@primer/octicons-react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { BoxSwitcher } from "@/components/chat/box-switcher";
 import { UserPopover } from "@/components/chat/user-popover";
 import { createClient } from "@/lib/supabase/client";
@@ -83,6 +84,7 @@ export function ChatSidebar({
   onCreateGroupDm,
 }: ChatSidebarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const isAdmin = box?.role === "owner" || box?.role === "admin";
   const otherMembers = members.filter((m) => m.user_id !== currentUserId);
   const [activeCalls, setActiveCalls] = useState<SidebarCall[]>(initialCalls ?? []);
@@ -173,13 +175,14 @@ export function ChatSidebar({
               <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#444]">
                 Channels
               </span>
-              <button
-                onClick={onCreateChannel}
-                className="flex h-4 w-4 items-center justify-center rounded text-[#444] hover:text-white"
-                title="Create channel"
-              >
-                <Plus className="h-3 w-3" />
-              </button>
+              <Tooltip label="Create channel">
+                <button
+                  onClick={onCreateChannel}
+                  className="flex h-4 w-4 items-center justify-center rounded text-[#444] hover:text-white"
+                >
+                  <Plus className="h-3 w-3" />
+                </button>
+              </Tooltip>
             </div>
             <div className="space-y-0.5">
               {channels.map((ch) => {
@@ -260,13 +263,14 @@ export function ChatSidebar({
             Direct Messages
           </span>
           {onCreateGroupDm && (
-            <button
-              onClick={onCreateGroupDm}
-              className="flex h-4 w-4 items-center justify-center rounded text-[#444] hover:text-white"
-              title="New group DM"
-            >
-              <Plus className="h-3 w-3" />
-            </button>
+            <Tooltip label="New group DM">
+              <button
+                onClick={onCreateGroupDm}
+                className="flex h-4 w-4 items-center justify-center rounded text-[#444] hover:text-white"
+              >
+                <Plus className="h-3 w-3" />
+              </button>
+            </Tooltip>
           )}
         </div>
         <div className="space-y-0.5">
@@ -415,16 +419,45 @@ export function ChatSidebar({
         </div>
       </div>
 
-      {/* Bottom links */}
+      {/* Workspace navigation */}
       {box && (
-        <div className="border-t border-[#1a1a1a] px-2 py-2">
+        <div className="border-t border-[#1a1a1a] px-2 py-2 space-y-0.5">
+          <Link
+            href={`/box/${box.short_id}/members`}
+            className={`flex items-center gap-2 rounded-[6px] px-2 py-1.5 text-[13px] transition-colors ${
+              pathname?.includes(`/box/${box.short_id}/members`)
+                ? "bg-[#1a1a1a] font-medium text-white"
+                : "text-[#666] hover:bg-[#111] hover:text-[#aaa]"
+            }`}
+          >
+            <People className="h-3.5 w-3.5 text-[#555]" />
+            <span className="truncate">Members</span>
+            <span className="ml-auto text-[11px] text-[#444]">{members.length}</span>
+          </Link>
           <Link
             href={`/box/${box.short_id}/integrations`}
-            className="flex items-center gap-2 rounded-[6px] px-2 py-1.5 text-[13px] text-[#666] transition-colors hover:bg-[#111] hover:text-[#aaa]"
+            className={`flex items-center gap-2 rounded-[6px] px-2 py-1.5 text-[13px] transition-colors ${
+              pathname?.includes(`/box/${box.short_id}/integrations`)
+                ? "bg-[#1a1a1a] font-medium text-white"
+                : "text-[#666] hover:bg-[#111] hover:text-[#aaa]"
+            }`}
           >
             <Plug className="h-3.5 w-3.5 text-[#555]" />
             <span className="truncate">Integrations</span>
           </Link>
+          {isAdmin && (
+            <Link
+              href={`/box/${box.short_id}/settings`}
+              className={`flex items-center gap-2 rounded-[6px] px-2 py-1.5 text-[13px] transition-colors ${
+                pathname?.includes(`/box/${box.short_id}/settings`)
+                  ? "bg-[#1a1a1a] font-medium text-white"
+                  : "text-[#666] hover:bg-[#111] hover:text-[#aaa]"
+              }`}
+            >
+              <Gear className="h-3.5 w-3.5 text-[#555]" />
+              <span className="truncate">Settings</span>
+            </Link>
+          )}
         </div>
       )}
 

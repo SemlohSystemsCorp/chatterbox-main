@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { XIcon as X, SearchIcon as Search, CheckIcon as Check, LoopIcon as Loader2, PeopleIcon as Users } from "@primer/octicons-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface Member {
   user_id: string;
@@ -124,13 +125,14 @@ export function GroupDmModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#1a1a1a] px-5 py-4">
           <h2 className="text-[16px] font-bold text-white">New Group DM</h2>
-          <button
-            onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-            title="Close"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <Tooltip label="Close">
+            <button
+              onClick={onClose}
+              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </Tooltip>
         </div>
 
         {/* Body */}
@@ -154,15 +156,16 @@ export function GroupDmModal({
           {selectedMembers.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {selectedMembers.map((m) => (
-                <button
-                  key={m.user_id}
-                  onClick={() => toggleMember(m.user_id)}
-                  className="flex items-center gap-1 rounded-full bg-[#1a1a1a] px-2.5 py-1 text-[12px] text-[#ccc] transition-colors hover:bg-[#252525]"
-                  title={`Remove ${m.full_name || m.email}`}
-                >
-                  {m.full_name || m.email}
-                  <X className="h-3 w-3 text-[#555]" />
-                </button>
+                <Tooltip label={`Remove ${m.full_name || m.email}`}>
+                  <button
+                    key={m.user_id}
+                    onClick={() => toggleMember(m.user_id)}
+                    className="flex items-center gap-1 rounded-full bg-[#1a1a1a] px-2.5 py-1 text-[12px] text-[#ccc] transition-colors hover:bg-[#252525]"
+                  >
+                    {m.full_name || m.email}
+                    <X className="h-3 w-3 text-[#555]" />
+                  </button>
+                </Tooltip>
               ))}
             </div>
           )}

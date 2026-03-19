@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeftIcon as ArrowLeft, PersonIcon as User, ShieldIcon as Shield, PaintbrushIcon as Palette, BellIcon as Bell, CommentDiscussionIcon as MessageSquare, LockIcon as Lock, AccessibilityIcon as Accessibility, GlobeIcon as Globe, DeviceCameraVideoIcon as Video, ToolsIcon as Wrench, CheckCircleIcon as Save, CheckIcon as Check, DeviceCameraIcon as Camera, LoopIcon as Loader2, TrashIcon as Trash2 } from "@primer/octicons-react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { AppShell } from "@/components/layout/app-shell";
 import { TopBar } from "@/components/layout/top-bar";
 import { useSettingsStore, type Settings } from "@/stores/settings-store";

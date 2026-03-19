@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { PinIcon as Pin, XIcon as X, LoopIcon as Loader2 } from "@primer/octicons-react";
 import { Markdown, segmentContent } from "@/components/ui/markdown";
+import { Tooltip } from "@/components/ui/tooltip";
 import { getMediaType } from "@/components/modals/media-preview-modal";
 import { formatTime, formatDate, getInitials } from "@/lib/chat-helpers";
 import type { PinnedMessage } from "@/types";
@@ -57,13 +58,14 @@ export function PinnedMessagesPanel({
             </span>
           )}
         </div>
-        <button
-          onClick={onClose}
-          className="flex h-6 w-6 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-          title="Close"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
+        <Tooltip label="Close">
+          <button
+            onClick={onClose}
+            className="flex h-6 w-6 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </Tooltip>
       </div>
 
       {loading ? (
@@ -136,13 +138,14 @@ export function PinnedMessagesPanel({
                     })}
                   </div>
                 </div>
-                <button
-                  onClick={() => handleUnpin(pin.message_id)}
-                  className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded text-[#555] opacity-0 transition-all hover:text-[#de1135] group-hover:opacity-100"
-                  title="Unpin"
-                >
-                  <X className="h-3 w-3" />
-                </button>
+                <Tooltip label="Unpin">
+                  <button
+                    onClick={() => handleUnpin(pin.message_id)}
+                    className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded text-[#555] opacity-0 transition-all hover:text-[#de1135] group-hover:opacity-100"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Tooltip>
               </div>
             );
           })}

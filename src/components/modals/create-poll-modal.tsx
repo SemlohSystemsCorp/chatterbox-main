@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { XIcon as X, PlusIcon as Plus, GrabberIcon as GripVertical, TrashIcon as Trash2 } from "@primer/octicons-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface CreatePollModalProps {
   open: boolean;
@@ -129,13 +130,14 @@ export function CreatePollModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#1a1a1a] px-5 py-4">
           <h2 className="text-[16px] font-bold text-white">Create Poll</h2>
-          <button
-            onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-            title="Close"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <Tooltip label="Close">
+            <button
+              onClick={onClose}
+              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </Tooltip>
         </div>
 
         {/* Body */}
@@ -173,14 +175,15 @@ export function CreatePollModal({
                       className="flex-1 rounded-[6px] border-2 border-transparent bg-[#1a1a1a] px-3 py-2 text-[13px] text-white placeholder:text-[#555] focus:border-white focus:bg-[#222] focus:outline-none"
                     />
                     {options.length > 2 && (
-                      <button
-                        type="button"
-                        onClick={() => removeOption(i)}
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-[#de1135]"
-                        title="Remove option"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <Tooltip label="Remove option">
+                        <button
+                          type="button"
+                          onClick={() => removeOption(i)}
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-[#de1135]"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </Tooltip>
                     )}
                   </div>
                 ))}

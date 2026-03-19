@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { XIcon as X, LoopIcon as Loader2, AlertFillIcon as AlertTriangle, CheckboxIcon as CheckSquare, QuestionIcon as HelpCircle, MentionIcon as AtSign, StarIcon as Star, ZapIcon as Zap, NoteIcon as Newspaper } from "@primer/octicons-react";
 import { Markdown } from "@/components/ui/markdown";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface Highlight {
   category: string;
@@ -142,13 +143,14 @@ export function HighlightsPanel({
           >
             Mark all read
           </button>
-          <button
-            onClick={onDismiss}
-            className="flex h-6 w-6 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-            title="Close highlights"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+          <Tooltip label="Close highlights">
+            <button
+              onClick={onDismiss}
+              className="flex h-6 w-6 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
         </div>
       </div>
 
@@ -203,13 +205,14 @@ export function HighlightsPanel({
                 Catch-up digest — #{channelName}
               </span>
             </div>
-            <button
-              onClick={() => setShowDigest(false)}
-              className="flex h-5 w-5 items-center justify-center rounded text-[#555] transition-colors hover:text-white"
-              title="Dismiss"
-            >
-              <X className="h-3 w-3" />
-            </button>
+            <Tooltip label="Dismiss">
+              <button
+                onClick={() => setShowDigest(false)}
+                className="flex h-5 w-5 items-center justify-center rounded text-[#555] transition-colors hover:text-white"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Tooltip>
           </div>
           <div className="max-h-[300px] overflow-auto px-3 py-2.5">
             {digestLoading ? (

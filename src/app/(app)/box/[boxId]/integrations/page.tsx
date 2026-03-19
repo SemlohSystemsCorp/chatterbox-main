@@ -3,10 +3,10 @@ import {
   getAuthUser,
   getUserBoxes,
   getBoxByShortId,
+  getBoxMembers,
 } from "@/lib/data";
 import { redirect } from "next/navigation";
 import { IntegrationsClient } from "./integrations-client";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
 
 export async function generateMetadata({
   params,
@@ -34,7 +34,7 @@ export default async function IntegrationsPage({
     redirect("/dashboard");
   }
 
-  const [boxesResult, integrationsResult, connectedResult] = await Promise.all([
+  const [boxesResult, integrationsResult, connectedResult, membersResult] = await Promise.all([
     getUserBoxes(supabase, user.id),
     supabase
       .from("integrations")
@@ -45,6 +45,7 @@ export default async function IntegrationsPage({
       .select("*, integrations(name)")
       .eq("workspace_id", box.id)
       .eq("enabled", true),
+    getBoxMembers(supabase, box.id),
   ]);
 
   const integrations = integrationsResult.data ?? [];
@@ -69,6 +70,7 @@ export default async function IntegrationsPage({
       box={box}
       integrations={integrations}
       connectedMap={connectedMap}
+      members={membersResult}
     />
   );
 }

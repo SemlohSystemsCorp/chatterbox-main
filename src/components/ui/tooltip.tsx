@@ -11,7 +11,7 @@ interface TooltipProps {
   delay?: number;
 }
 
-export function Tooltip({ label, children, side = "top", delay = 0 }: TooltipProps) {
+export function Tooltip({ label, children, side = "bottom", delay = 0 }: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
   const triggerRef = useRef<HTMLDivElement>(null);

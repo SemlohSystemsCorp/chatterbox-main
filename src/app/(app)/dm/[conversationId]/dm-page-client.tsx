@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { ChevronDownIcon as ChevronDown, XIcon as X, CommentDiscussionIcon as MessageSquare, SearchIcon as Search, DeviceMobileIcon as Phone, BookmarkIcon as Bookmark, TasklistIcon as ListTodo, PersonIcon as User } from "@primer/octicons-react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { useRouter } from "next/navigation";
 import { CreateChannelModal } from "@/components/modals/create-channel-modal";
 import { InviteModal } from "@/components/modals/invite-modal";
@@ -1384,25 +1385,27 @@ export function DmPageClient({
             </h1>
             <div className="flex items-center gap-0.5">
               {!isSelfDm && (
-                <button
-                  onClick={handleStartCall}
-                  disabled={startingCall}
-                  className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white disabled:opacity-50"
-                  title="Start a call"
-                >
-                  <Phone className="h-3.5 w-3.5" />
-                </button>
+                <Tooltip label="Start a call">
+                  <button
+                    onClick={handleStartCall}
+                    disabled={startingCall}
+                    className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white disabled:opacity-50"
+                  >
+                    <Phone className="h-3.5 w-3.5" />
+                  </button>
+                </Tooltip>
               )}
-              <button
-                onClick={() => setSearchOpen(true)}
-                className="flex h-7 items-center gap-1.5 rounded-[6px] px-2 text-[12px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-                title="Search messages"
-              >
-                <Search className="h-3.5 w-3.5" />
-                <kbd className="hidden rounded bg-[#0a0a0a] px-1 py-0.5 text-[10px] text-[#444] sm:inline">
-                  ⌘K
-                </kbd>
-              </button>
+              <Tooltip label="Search messages">
+                <button
+                  onClick={() => setSearchOpen(true)}
+                  className="flex h-7 items-center gap-1.5 rounded-[6px] px-2 text-[12px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+                >
+                  <Search className="h-3.5 w-3.5" />
+                  <kbd className="hidden rounded bg-[#0a0a0a] px-1 py-0.5 text-[10px] text-[#444] sm:inline">
+                    ⌘K
+                  </kbd>
+                </button>
+              </Tooltip>
               <NotificationBell userId={user.id} />
             </div>
           </div>

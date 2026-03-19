@@ -15,6 +15,7 @@ import {
   DailyAudio,
 } from "@daily-co/daily-react";
 import { UnmuteIcon as Mic, MuteIcon as MicOff, DeviceCameraVideoIcon as Video, EyeClosedIcon as VideoOff, NoEntryIcon as PhoneOff, DeviceDesktopIcon as Monitor, ScreenNormalIcon as MonitorOff, PeopleIcon as Users, CommentDiscussionIcon as MessageSquare, PaperAirplaneIcon as Send, XIcon as X } from "@primer/octicons-react";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface CallData {
   id: string;
@@ -533,13 +534,14 @@ function CallUI({
           <div className="flex w-80 flex-col border-l border-[#1a1a1a]">
             <div className="flex h-10 shrink-0 items-center justify-between border-b border-[#1a1a1a] px-3">
               <span className="text-[13px] font-medium text-white">Chat</span>
-              <button
-                onClick={toggleChat}
-                className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] hover:bg-[#1a1a1a] hover:text-white"
-                title="Close chat"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
+              <Tooltip label="Close chat">
+                <button
+                  onClick={toggleChat}
+                  className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] hover:bg-[#1a1a1a] hover:text-white"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </Tooltip>
             </div>
             <div className="flex-1 overflow-y-auto px-3 py-2">
               {chatMessages.length === 0 ? (
@@ -582,14 +584,15 @@ function CallUI({
                   placeholder="Send a message..."
                   className="flex-1 bg-transparent text-[13px] text-white placeholder-[#444] focus:outline-none"
                 />
-                <button
-                  onClick={sendChat}
-                  disabled={!chatInput.trim()}
-                  className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:text-white disabled:opacity-30"
-                  title="Send message"
-                >
-                  <Send className="h-3.5 w-3.5" />
-                </button>
+                <Tooltip label="Send message">
+                  <button
+                    onClick={sendChat}
+                    disabled={!chatInput.trim()}
+                    className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#555] transition-colors hover:text-white disabled:opacity-30"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                  </button>
+                </Tooltip>
               </div>
             </div>
           </div>
@@ -598,62 +601,65 @@ function CallUI({
 
       {/* Controls */}
       <div className="flex h-20 shrink-0 items-center justify-center gap-3 border-t border-[#1a1a1a]">
-        <button
-          onClick={toggleAudio}
-          className={`group relative flex h-12 w-12 items-center justify-center rounded-full transition-colors ${
-            isMuted
-              ? "bg-[#de1135] text-white"
-              : "bg-[#1a1a1a] text-white hover:bg-[#222]"
-          }`}
-          title={isMuted ? "Unmute" : "Mute"}
-        >
-          {isMuted ? (
-            <MicOff className="h-5 w-5" />
-          ) : (
-            <Mic className="h-5 w-5" />
-          )}
-          <span className="absolute -bottom-5 text-[10px] text-[#555] opacity-0 transition-opacity group-hover:opacity-100">
-            {isMuted ? "Unmute" : "Mute"}
-          </span>
-        </button>
+        <Tooltip label={isMuted ? "Unmute" : "Mute"}>
+          <button
+            onClick={toggleAudio}
+            className={`group relative flex h-12 w-12 items-center justify-center rounded-full transition-colors ${
+              isMuted
+                ? "bg-[#de1135] text-white"
+                : "bg-[#1a1a1a] text-white hover:bg-[#222]"
+            }`}
+          >
+            {isMuted ? (
+              <MicOff className="h-5 w-5" />
+            ) : (
+              <Mic className="h-5 w-5" />
+            )}
+            <span className="absolute -bottom-5 text-[10px] text-[#555] opacity-0 transition-opacity group-hover:opacity-100">
+              {isMuted ? "Unmute" : "Mute"}
+            </span>
+          </button>
+        </Tooltip>
 
-        <button
-          onClick={toggleVideo}
-          className={`group relative flex h-12 w-12 items-center justify-center rounded-full transition-colors ${
-            isVideoOff
-              ? "bg-[#de1135] text-white"
-              : "bg-[#1a1a1a] text-white hover:bg-[#222]"
-          }`}
-          title={isVideoOff ? "Turn on camera" : "Turn off camera"}
-        >
-          {isVideoOff ? (
-            <VideoOff className="h-5 w-5" />
-          ) : (
-            <Video className="h-5 w-5" />
-          )}
-          <span className="absolute -bottom-5 text-[10px] text-[#555] opacity-0 transition-opacity group-hover:opacity-100">
-            {isVideoOff ? "Camera" : "Camera"}
-          </span>
-        </button>
+        <Tooltip label={isVideoOff ? "Turn on camera" : "Turn off camera"}>
+          <button
+            onClick={toggleVideo}
+            className={`group relative flex h-12 w-12 items-center justify-center rounded-full transition-colors ${
+              isVideoOff
+                ? "bg-[#de1135] text-white"
+                : "bg-[#1a1a1a] text-white hover:bg-[#222]"
+            }`}
+          >
+            {isVideoOff ? (
+              <VideoOff className="h-5 w-5" />
+            ) : (
+              <Video className="h-5 w-5" />
+            )}
+            <span className="absolute -bottom-5 text-[10px] text-[#555] opacity-0 transition-opacity group-hover:opacity-100">
+              {isVideoOff ? "Camera" : "Camera"}
+            </span>
+          </button>
+        </Tooltip>
 
-        <button
-          onClick={toggleScreen}
-          className={`group relative flex h-12 w-12 items-center justify-center rounded-full transition-colors ${
-            isSharingScreen
-              ? "bg-[#276ef1] text-white"
-              : "bg-[#1a1a1a] text-white hover:bg-[#222]"
-          }`}
-          title={isSharingScreen ? "Stop sharing" : "Share screen"}
-        >
-          {isSharingScreen ? (
-            <MonitorOff className="h-5 w-5" />
-          ) : (
-            <Monitor className="h-5 w-5" />
-          )}
-          <span className="absolute -bottom-5 text-[10px] text-[#555] opacity-0 transition-opacity group-hover:opacity-100">
-            Screen
-          </span>
-        </button>
+        <Tooltip label={isSharingScreen ? "Stop sharing" : "Share screen"}>
+          <button
+            onClick={toggleScreen}
+            className={`group relative flex h-12 w-12 items-center justify-center rounded-full transition-colors ${
+              isSharingScreen
+                ? "bg-[#276ef1] text-white"
+                : "bg-[#1a1a1a] text-white hover:bg-[#222]"
+            }`}
+          >
+            {isSharingScreen ? (
+              <MonitorOff className="h-5 w-5" />
+            ) : (
+              <Monitor className="h-5 w-5" />
+            )}
+            <span className="absolute -bottom-5 text-[10px] text-[#555] opacity-0 transition-opacity group-hover:opacity-100">
+              Screen
+            </span>
+          </button>
+        </Tooltip>
 
         <div className="mx-2 h-8 w-px bg-[#1a1a1a]" />
 

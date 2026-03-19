@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { XIcon as X, SearchIcon as Search, CheckIcon as Check, PersonAddIcon as UserPlus, LockIcon as Lock, TrophyIcon as Crown, ShieldIcon as Shield } from "@primer/octicons-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface MemberData {
   user_id: string;
@@ -184,13 +185,14 @@ export function AddToChannelModal({
               #{channelName}
             </h2>
           </div>
-          <button
-            onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-            title="Close"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <Tooltip label="Close">
+            <button
+              onClick={onClose}
+              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </Tooltip>
         </div>
 
         {/* Tabs */}

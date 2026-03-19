@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { PlusIcon as Plus, TrashIcon as Trash2, GrabberIcon as GripVertical } from "@primer/octicons-react";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface Todo {
   id: string;
@@ -104,14 +105,15 @@ export function TodosPanel() {
             maxLength={500}
             className="flex-1 rounded-[8px] border-2 border-transparent bg-[#1a1a1a] px-3 py-2.5 text-[14px] text-white placeholder:text-[#555] focus:border-white focus:bg-[#222] focus:outline-none"
           />
-          <button
-            type="submit"
-            disabled={!newText.trim() || adding}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] bg-white text-black transition-colors hover:bg-[#ddd] disabled:opacity-40"
-            title="Add todo"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
+          <Tooltip label="Add todo">
+            <button
+              type="submit"
+              disabled={!newText.trim() || adding}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] bg-white text-black transition-colors hover:bg-[#ddd] disabled:opacity-40"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </Tooltip>
         </form>
 
         {/* Active todos */}
@@ -127,13 +129,14 @@ export function TodosPanel() {
                   className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[4px] border-2 border-[#333] transition-colors hover:border-white"
                 />
                 <span className="flex-1 text-[14px] text-white">{todo.text}</span>
-                <button
-                  onClick={() => handleDelete(todo.id)}
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] text-[#333] opacity-0 transition-all hover:text-[#de1135] group-hover:opacity-100"
-                  title="Delete todo"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                <Tooltip label="Delete todo">
+                  <button
+                    onClick={() => handleDelete(todo.id)}
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] text-[#333] opacity-0 transition-all hover:text-[#de1135] group-hover:opacity-100"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </Tooltip>
               </div>
             ))}
           </div>

@@ -6,6 +6,7 @@ import { GearIcon as Settings, CommentDiscussionIcon as MessageSquare, PersonAdd
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getInitials, type UserData } from "@/lib/chat-helpers";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface UserPopoverProps {
   user: UserData;
@@ -161,13 +162,14 @@ export function UserPopover({ user, isAdmin, onInvite, boxId, boxName, boxRole, 
         <div className="absolute bottom-full left-2 right-2 z-50 mb-1 rounded-[10px] border border-[#1a1a1a] bg-[#111] shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
           <div className="flex items-center justify-between border-b border-[#1a1a1a] px-3 py-2.5">
             <span className="text-[13px] font-medium text-white">Set status</span>
-            <button
-              onClick={() => setStatusModalOpen(false)}
-              className="flex h-5 w-5 items-center justify-center rounded text-[#555] hover:text-white"
-              title="Close"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
+            <Tooltip label="Close">
+              <button
+                onClick={() => setStatusModalOpen(false)}
+                className="flex h-5 w-5 items-center justify-center rounded text-[#555] hover:text-white"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
           </div>
 
           {/* Status input */}

@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   ArrowLeftIcon as ArrowLeft,
   SearchIcon as Search,
   CheckCircleFillIcon as CheckCircle,
   PlugIcon as Plug,
+  PeopleIcon as People,
+  ShieldLockIcon as Shield,
 } from "@primer/octicons-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { TopBar } from "@/components/layout/top-bar";
@@ -31,6 +32,18 @@ interface Integration {
   brand_color: string;
   category: string;
   is_available: boolean;
+  website_url: string | null;
+}
+
+interface MemberData {
+  id: string;
+  user_id: string;
+  role: string;
+  joined_at: string;
+  email: string;
+  full_name: string;
+  avatar_url: string | null;
+  status: string;
 }
 
 interface IntegrationsClientProps {
@@ -44,6 +57,7 @@ interface IntegrationsClientProps {
   box: BoxData & { description: string | null; owner_id: string; created_at: string };
   integrations: Integration[];
   connectedMap: Record<string, { connected_at: string; connected_by: string }>;
+  members: MemberData[];
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -52,23 +66,19 @@ const CATEGORY_LABELS: Record<string, string> = {
   notifications: "Notifications",
 };
 
-// Brand icons for known integrations
-function IntegrationIcon({ name, brandColor }: { name: string; brandColor: string }) {
-  const iconMap: Record<string, string> = {
-    zoom: "Z",
-    jira: "J",
-    github: "G",
-    "google-calendar": "C",
-    linear: "L",
-    notion: "N",
-  };
-
+function IntegrationIcon({ name, brandColor, iconUrl }: { name: string; brandColor: string; iconUrl: string | null }) {
   return (
     <div
-      className="flex h-10 w-10 items-center justify-center rounded-lg text-[16px] font-bold text-white"
+      className="flex h-10 w-10 items-center justify-center rounded-lg"
       style={{ backgroundColor: brandColor }}
     >
-      {iconMap[name] || name[0].toUpperCase()}
+      {iconUrl ? (
+        <img src={iconUrl} alt={name} className="h-5 w-5" />
+      ) : (
+        <span className="text-[16px] font-bold text-white">
+          {name[0].toUpperCase()}
+        </span>
+      )}
     </div>
   );
 }
@@ -79,8 +89,8 @@ export function IntegrationsClient({
   box,
   integrations,
   connectedMap,
+  members,
 }: IntegrationsClientProps) {
-  const router = useRouter();
   const isAdmin = box.role === "owner" || box.role === "admin";
   const [filter, setFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
@@ -199,6 +209,7 @@ export function IntegrationsClient({
                       <IntegrationIcon
                         name={integration.name}
                         brandColor={integration.brand_color}
+                        iconUrl={integration.icon_url}
                       />
                       <div className="min-w-0 flex-1">
                         <h3 className="text-[14px] font-semibold text-white">
@@ -243,6 +254,75 @@ export function IntegrationsClient({
                 </p>
               </div>
             )}
+
+            {/* Workspace Members */}
+            <div className="mt-10">
+              <div className="flex items-center gap-2 mb-4">
+                <People className="h-4 w-4 text-[#555]" />
+                <h3 className="text-[15px] font-semibold text-white">
+                  Workspace Members
+                </h3>
+                <span className="text-[12px] text-[#555]">{members.length}</span>
+              </div>
+              <div className="rounded-[10px] border border-[#1a1a1a] bg-[#111] divide-y divide-[#1a1a1a]">
+                {members.map((member) => {
+                  const initials = member.full_name
+                    ? member.full_name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2)
+                    : member.email[0].toUpperCase();
+                  const roleColor =
+                    member.role === "owner"
+                      ? "text-[#f59e0b]"
+                      : member.role === "admin"
+                        ? "text-[#3b82f6]"
+                        : "text-[#555]";
+
+                  return (
+                    <div
+                      key={member.id}
+                      className="flex items-center gap-3 px-4 py-3"
+                    >
+                      <div className="relative h-8 w-8 shrink-0">
+                        {member.avatar_url ? (
+                          <img
+                            src={member.avatar_url}
+                            alt=""
+                            className="h-8 w-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1a1a1a] text-[11px] font-bold text-white">
+                            {initials}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate text-[13px] font-medium text-white">
+                            {member.full_name || member.email}
+                          </span>
+                          {member.user_id === user.id && (
+                            <span className="rounded bg-[#1a1a1a] px-1.5 py-0.5 text-[9px] text-[#555]">
+                              you
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[12px] text-[#555]">{member.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`flex items-center gap-1 text-[11px] font-medium capitalize ${roleColor}`}>
+                          {member.role === "owner" && <Shield className="h-3 w-3" />}
+                          {member.role}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </div>

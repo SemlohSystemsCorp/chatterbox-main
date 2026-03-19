@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { SearchIcon as Search, XIcon as X, HashIcon as Hash, CommentDiscussionIcon as MessageSquare, SparklesFillIcon as Sparkles, ArrowRightIcon as ArrowRight, LoopIcon as Loader2 } from "@primer/octicons-react";
 import { Markdown } from "@/components/ui/markdown";
 import { useRouter } from "next/navigation";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface SearchResult {
   id: string;
@@ -327,30 +328,32 @@ export function SearchModal({ open, onClose, boxShortId, boxId }: SearchModalPro
             className="flex-1 bg-transparent text-[14px] text-white placeholder:text-[#555] focus:outline-none"
           />
           {query && (
-            <button
-              onClick={() => {
-                setQuery("");
-                setResults([]);
-                setAiAnswer("");
-                setAiSources([]);
-                setActiveFilters({ text: "", from: null, in: null, before: null, has: null });
-                inputRef.current?.focus();
-              }}
-              className="flex h-5 w-5 items-center justify-center rounded text-[#555] hover:text-white"
-              title="Clear search"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
+            <Tooltip label="Clear search">
+              <button
+                onClick={() => {
+                  setQuery("");
+                  setResults([]);
+                  setAiAnswer("");
+                  setAiSources([]);
+                  setActiveFilters({ text: "", from: null, in: null, before: null, has: null });
+                  inputRef.current?.focus();
+                }}
+                className="flex h-5 w-5 items-center justify-center rounded text-[#555] hover:text-white"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
           )}
           {mode === "ask" && query.trim().length >= 3 && (
-            <button
-              onClick={askAI}
-              disabled={aiLoading}
-              className="flex h-6 w-6 items-center justify-center rounded-[4px] bg-white text-black transition-colors hover:bg-[#e0e0e0] disabled:bg-[#333] disabled:text-[#666]"
-              title="Ask AI"
-            >
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
+            <Tooltip label="Ask AI">
+              <button
+                onClick={askAI}
+                disabled={aiLoading}
+                className="flex h-6 w-6 items-center justify-center rounded-[4px] bg-white text-black transition-colors hover:bg-[#e0e0e0] disabled:bg-[#333] disabled:text-[#666]"
+              >
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
           )}
           <kbd className="rounded bg-[#0a0a0a] px-1.5 py-0.5 text-[10px] text-[#444]">ESC</kbd>
         </div>

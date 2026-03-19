@@ -35,6 +35,7 @@ interface Integration {
   auth_type: string;
   scopes: string | null;
   is_available: boolean;
+  website_url: string | null;
 }
 
 interface WorkspaceIntegration {
@@ -59,22 +60,19 @@ interface IntegrationDetailClientProps {
   connectedByName: string | null;
 }
 
-function IntegrationIcon({ name, brandColor }: { name: string; brandColor: string }) {
-  const iconMap: Record<string, string> = {
-    zoom: "Z",
-    jira: "J",
-    github: "G",
-    "google-calendar": "C",
-    linear: "L",
-    notion: "N",
-  };
-
+function IntegrationIcon({ name, brandColor, iconUrl }: { name: string; brandColor: string; iconUrl: string | null }) {
   return (
     <div
-      className="flex h-14 w-14 items-center justify-center rounded-xl text-[24px] font-bold text-white"
+      className="flex h-14 w-14 items-center justify-center rounded-xl"
       style={{ backgroundColor: brandColor }}
     >
-      {iconMap[name] || name[0].toUpperCase()}
+      {iconUrl ? (
+        <img src={iconUrl} alt={name} className="h-7 w-7" />
+      ) : (
+        <span className="text-[24px] font-bold text-white">
+          {name[0].toUpperCase()}
+        </span>
+      )}
     </div>
   );
 }
@@ -183,6 +181,7 @@ export function IntegrationDetailClient({
               <IntegrationIcon
                 name={integration.name}
                 brandColor={integration.brand_color}
+                iconUrl={integration.icon_url}
               />
               <div className="flex-1">
                 <div className="flex items-center gap-3">
@@ -201,6 +200,17 @@ export function IntegrationDetailClient({
                 <p className="mt-1 text-[14px] leading-relaxed text-[#888]">
                   {integration.description}
                 </p>
+                {integration.website_url && (
+                  <a
+                    href={integration.website_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center gap-1 text-[12px] text-[#555] transition-colors hover:text-white"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    {integration.website_url.replace(/^https?:\/\/(www\.)?/, "")}
+                  </a>
+                )}
               </div>
             </div>
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CommentDiscussionIcon as MessageSquare, PlusIcon as Plus, SearchIcon as Search, HashIcon as Hash, PeopleIcon as Users, LinkIcon } from "@primer/octicons-react";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface SidebarBox {
   id: string;
@@ -77,13 +78,14 @@ export function Sidebar({ user, boxes, activeBoxId }: SidebarProps) {
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#444]">
             Your Boxes
           </span>
-          <Link
-            href="/create/box"
-            className="flex h-5 w-5 items-center justify-center rounded text-[#444] hover:bg-[#1a1a1a] hover:text-white"
-            title="Create new box"
-          >
-            <Plus className="h-3 w-3" />
-          </Link>
+          <Tooltip label="Create new box">
+            <Link
+              href="/create/box"
+              className="flex h-5 w-5 items-center justify-center rounded text-[#444] hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <Plus className="h-3 w-3" />
+            </Link>
+          </Tooltip>
         </div>
 
         {boxes.length === 0 ? (

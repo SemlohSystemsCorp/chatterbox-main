@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { GiphyFetch } from "@giphy/js-fetch-api";
 import { Grid } from "@giphy/react-components";
 import { SearchIcon as Search, XIcon as X, PaperAirplaneIcon as Send, ArrowLeftIcon as ArrowLeft } from "@primer/octicons-react";
+import { Tooltip } from "@/components/ui/tooltip";
 import type { IGif } from "@giphy/js-types";
 
 const API_KEY = process.env.NEXT_PUBLIC_GIPHY_API_KEY || "";
@@ -170,13 +171,14 @@ export function GifPicker({ onSelect, children }: GifPickerProps) {
                     className="flex-1 bg-transparent text-[13px] text-white placeholder:text-[#555] focus:outline-none"
                   />
                   {query && (
-                    <button
-                      onClick={() => { setQuery(""); setDebouncedQuery(""); }}
-                      className="flex h-4 w-4 items-center justify-center rounded-full text-[#555] hover:text-white"
-                      title="Clear search"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
+                    <Tooltip label="Clear search">
+                      <button
+                        onClick={() => { setQuery(""); setDebouncedQuery(""); }}
+                        className="flex h-4 w-4 items-center justify-center rounded-full text-[#555] hover:text-white"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Tooltip>
                   )}
                 </div>
               </div>

@@ -80,11 +80,13 @@ const chatMessages = [
 
 export default function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null);
-  const [isMac, setIsMac] = useState(false);
+  const [platform, setPlatform] = useState<"mac" | "windows" | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
   useEffect(() => {
-    setIsMac(/Mac|Macintosh/i.test(navigator.userAgent));
+    const ua = navigator.userAgent;
+    if (/Mac|Macintosh/i.test(ua)) setPlatform("mac");
+    else if (/Windows/i.test(ua)) setPlatform("windows");
   }, []);
 
   // Subtle parallax on the hero preview
@@ -104,11 +106,15 @@ export default function HomePage() {
     <div className="min-h-screen bg-[#0a0a0a]">
       <MarketingNav />
 
-      {/* ── macOS Download Banner ── */}
-      {isMac && !bannerDismissed && (
+      {/* ── Desktop Download Banner ── */}
+      {platform && !bannerDismissed && (
         <div className="fixed left-0 right-0 top-14 z-40 flex items-center justify-center gap-3 border-b border-white/[0.06] bg-[#0a0a0a]/95 px-4 py-2.5 text-[13px] text-[#ccc] backdrop-blur">
-          <svg className="h-4 w-4 shrink-0 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-          <span>Chatterbox is available as a native macOS app</span>
+          {platform === "mac" ? (
+            <svg className="h-4 w-4 shrink-0 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          ) : (
+            <svg className="h-4 w-4 shrink-0 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
+          )}
+          <span>Chatterbox is available as a native {platform === "mac" ? "macOS" : "Windows"} app</span>
           <a
             href="https://github.com/SemlohSystemsCorp/chatterbox-main/releases/latest"
             target="_blank"
@@ -129,7 +135,7 @@ export default function HomePage() {
       )}
 
       {/* ── Hero ── */}
-      <section className={`relative overflow-hidden ${isMac && !bannerDismissed ? "pt-24" : "pt-14"}`}>
+      <section className={`relative overflow-hidden ${platform && !bannerDismissed ? "pt-24" : "pt-14"}`}>
         {/* Background glow */}
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute left-1/2 top-0 h-[600px] w-[800px] -translate-x-1/2 rounded-full bg-white/[0.02] blur-[120px]" />
@@ -707,23 +713,34 @@ export default function HomePage() {
               <Download className="h-7 w-7 text-white" />
             </div>
             <h3 className="mb-2 text-[22px] font-bold tracking-[-0.01em] text-white">
-              Download for macOS
+              Download desktop app
             </h3>
             <p className="mb-8 max-w-md text-[14px] leading-[22px] text-[#777]">
               Get the native desktop app for the best experience. Native notifications,
               global shortcuts, and a faster feel.
             </p>
-            <a
-              href="https://github.com/SemlohSystemsCorp/chatterbox-main/releases/latest"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group inline-flex h-11 items-center gap-2.5 rounded-xl bg-white px-6 text-[14px] font-semibold text-black transition-all hover:bg-[#e8e8e8]"
-            >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-              Download for macOS
-            </a>
+            <div className="flex flex-col items-center gap-3 sm:flex-row">
+              <a
+                href="https://github.com/SemlohSystemsCorp/chatterbox-main/releases/latest"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex h-11 items-center gap-2.5 rounded-xl bg-white px-6 text-[14px] font-semibold text-black transition-all hover:bg-[#e8e8e8]"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                Download for macOS
+              </a>
+              <a
+                href="https://github.com/SemlohSystemsCorp/chatterbox-main/releases/latest"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex h-11 items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-6 text-[14px] font-medium text-[#ccc] transition-all hover:border-white/[0.12] hover:bg-white/[0.06]"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
+                Download for Windows
+              </a>
+            </div>
             <p className="mt-4 text-[12px] text-[#444]">
-              Requires macOS 10.15 or later
+              macOS 10.15+ &middot; Windows 10+
             </p>
           </div>
         </div>

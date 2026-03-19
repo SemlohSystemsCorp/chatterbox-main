@@ -32,6 +32,7 @@ import { createClient } from "@/lib/supabase/client";
 import { showPushNotification } from "@/lib/notifications";
 import { parseSlashCommand, executeCommand } from "@/lib/slash-commands";
 import { MemberProfileCard } from "@/components/chat/member-profile-card";
+import { Tooltip } from "@/components/ui/tooltip";
 import { usePresence } from "@/hooks/use-presence";
 import { useTyping } from "@/hooks/use-typing";
 import {
@@ -1749,91 +1750,100 @@ export function ChannelPageClient({
               </kbd>
             </button>
             <div className="mx-0.5 h-4 w-px bg-[#1a1a1a]" />
-            <button
-              onClick={handleStartCall}
-              disabled={startingCall}
-              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white disabled:opacity-50"
-              title="Start a call"
-            >
-              <Phone className="h-3.5 w-3.5" />
-            </button>
-            {zoomConnected && (
+            <Tooltip label="Start a call">
               <button
-                onClick={handleStartZoomMeeting}
-                disabled={creatingZoomMeeting}
-                className="flex h-7 items-center gap-1 rounded-[6px] px-1.5 text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-[#2D8CFF] disabled:opacity-50"
-                title="Start Zoom meeting"
+                onClick={handleStartCall}
+                disabled={startingCall}
+                className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white disabled:opacity-50"
               >
-                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M4 3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2.5l4 3V6.5l-4 3V5a2 2 0 0 0-2-2H4zm0 2h10v10H4V5z" />
-                </svg>
-                {creatingZoomMeeting && (
-                  <span className="text-[10px] text-[#2D8CFF]">...</span>
-                )}
+                <Phone className="h-3.5 w-3.5" />
               </button>
+            </Tooltip>
+            {zoomConnected && (
+              <Tooltip label="Start Zoom meeting">
+                <button
+                  onClick={handleStartZoomMeeting}
+                  disabled={creatingZoomMeeting}
+                  className="flex h-7 items-center gap-1 rounded-[6px] px-1.5 text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-[#2D8CFF] disabled:opacity-50"
+                >
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M4 3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2.5l4 3V6.5l-4 3V5a2 2 0 0 0-2-2H4zm0 2h10v10H4V5z" />
+                  </svg>
+                  {creatingZoomMeeting && (
+                    <span className="text-[10px] text-[#2D8CFF]">...</span>
+                  )}
+                </button>
+              </Tooltip>
             )}
-            <button
-              onClick={() => setSummaryOpen(true)}
-              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-              title="Summarize channel"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-            </button>
-            <button
-              onClick={() => setDigestOpen(true)}
-              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-              title="Channel digest"
-            >
-              <Newspaper className="h-3.5 w-3.5" />
-            </button>
-            <button
-              onClick={() => setShowPinnedPanel(!showPinnedPanel)}
-              className={`flex h-7 w-7 items-center justify-center rounded-[6px] transition-colors ${
-                showPinnedPanel
-                  ? "bg-[#1a1a1a] text-[#f59e0b]"
-                  : "text-[#555] hover:bg-[#1a1a1a] hover:text-white"
-              }`}
-              title="Pinned messages"
-            >
-              <Pin className="h-3.5 w-3.5" />
-            </button>
+            <Tooltip label="Summarize channel">
+              <button
+                onClick={() => setSummaryOpen(true)}
+                className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
+            <Tooltip label="Channel digest">
+              <button
+                onClick={() => setDigestOpen(true)}
+                className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+              >
+                <Newspaper className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
+            <Tooltip label="Pinned messages">
+              <button
+                onClick={() => setShowPinnedPanel(!showPinnedPanel)}
+                className={`flex h-7 w-7 items-center justify-center rounded-[6px] transition-colors ${
+                  showPinnedPanel
+                    ? "bg-[#1a1a1a] text-[#f59e0b]"
+                    : "text-[#555] hover:bg-[#1a1a1a] hover:text-white"
+                }`}
+              >
+                <Pin className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
             <NotificationBell userId={user.id} />
             {channel.is_private ? (
-              <button
-                onClick={() => setAddToChannelOpen(true)}
-                className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-                title="Manage channel members"
-              >
-                <UserPlus className="h-3.5 w-3.5" />
-              </button>
+              <Tooltip label="Manage channel members">
+                <button
+                  onClick={() => setAddToChannelOpen(true)}
+                  className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                </button>
+              </Tooltip>
             ) : (
-              <button
-                onClick={() => setInviteOpen(true)}
-                className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-                title="Invite people"
-              >
-                <UserPlus className="h-3.5 w-3.5" />
-              </button>
+              <Tooltip label="Invite people">
+                <button
+                  onClick={() => setInviteOpen(true)}
+                  className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                </button>
+              </Tooltip>
             )}
-            <button
-              onClick={() => channel.is_private ? setAddToChannelOpen(true) : undefined}
-              className="flex h-7 items-center gap-1 rounded-[6px] px-2 text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-              title="Members"
-            >
-              <Users className="h-3.5 w-3.5" />
-              <span className="text-[11px]">
-                {channel.is_private ? channelMembersList.length : liveMembers.length}
-              </span>
-            </button>
-            {channel.is_private && !isBoxAdmin && (
+            <Tooltip label="Members">
               <button
-                onClick={handleLeaveChannel}
-                disabled={leavingChannel}
-                className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#2a1520] hover:text-[#de1135] disabled:opacity-50"
-                title="Leave channel"
+                onClick={() => channel.is_private ? setAddToChannelOpen(true) : undefined}
+                className="flex h-7 items-center gap-1 rounded-[6px] px-2 text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
               >
-                <LogOut className="h-3.5 w-3.5" />
+                <Users className="h-3.5 w-3.5" />
+                <span className="text-[11px]">
+                  {channel.is_private ? channelMembersList.length : liveMembers.length}
+                </span>
               </button>
+            </Tooltip>
+            {channel.is_private && !isBoxAdmin && (
+              <Tooltip label="Leave channel">
+                <button
+                  onClick={handleLeaveChannel}
+                  disabled={leavingChannel}
+                  className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#2a1520] hover:text-[#de1135] disabled:opacity-50"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                </button>
+              </Tooltip>
             )}
           </div>
         </div>

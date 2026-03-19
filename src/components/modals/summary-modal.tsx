@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { XIcon as X, SparklesFillIcon as Sparkles, LoopIcon as Loader2, SyncIcon as RefreshCw } from "@primer/octicons-react";
 import { Markdown } from "@/components/ui/markdown";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface SummaryModalProps {
   open: boolean;
@@ -87,21 +88,23 @@ export function SummaryModal({
             </span>
           </div>
           <div className="flex items-center gap-1">
-            <button
-              onClick={fetchSummary}
-              disabled={loading}
-              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white disabled:opacity-50"
-              title="Refresh summary"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-            </button>
-            <button
-              onClick={onClose}
-              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-              title="Close"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <Tooltip label="Refresh summary">
+              <button
+                onClick={fetchSummary}
+                disabled={loading}
+                className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white disabled:opacity-50"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+              </button>
+            </Tooltip>
+            <Tooltip label="Close">
+              <button
+                onClick={onClose}
+                className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </Tooltip>
           </div>
         </div>
 

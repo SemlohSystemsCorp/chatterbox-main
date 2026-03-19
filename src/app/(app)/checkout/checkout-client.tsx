@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeftIcon as ArrowLeft, CheckIcon as Check, ZapIcon as Zap, OrganizationIcon as Building2, PeopleIcon as Users, SparklesFillIcon as Sparkles, DatabaseIcon as HardDrive, CommentIcon as MessageSquareText, PlugIcon as Puzzle, MegaphoneIcon as Headset, PaintbrushIcon as Palette, ShieldCheckIcon as ShieldCheck, FileIcon as FileText, ServerIcon as Server, LockIcon as Lock, DeviceMobileIcon as Phone, FileCodeIcon as FileSignature, GlobeIcon as Globe } from "@primer/octicons-react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { AppShell } from "@/components/layout/app-shell";
 import { TopBar } from "@/components/layout/top-bar";
 

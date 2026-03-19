@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeftIcon as ArrowLeft, GearIcon as Settings, HashIcon as Hash, LockIcon as Lock, PeopleIcon as Users, CreditCardIcon as CreditCard, ShieldIcon as Shield, TrophyIcon as Crown, TrashIcon as Trash2, PencilIcon as Pencil, ArchiveIcon as Archive, PlusIcon as Plus, AlertFillIcon as AlertTriangle, CheckIcon as Check, XIcon as X, EyeIcon as Eye, LinkExternalIcon as ExternalLink, ZapIcon as Zap, GlobeIcon as Globe, BellIcon as Bell, LinkIcon } from "@primer/octicons-react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { AppShell } from "@/components/layout/app-shell";
 import { TopBar } from "@/components/layout/top-bar";
 import { CreateChannelModal } from "@/components/modals/create-channel-modal";
@@ -99,13 +100,14 @@ function EditChannelModal({
       <div className="w-full max-w-[480px] rounded-[16px] border border-[#1a1a1a] bg-[#111] p-6 shadow-[0_16px_64px_rgba(0,0,0,0.6)]">
         <div className="mb-5 flex items-center justify-between">
           <h3 className="text-[18px] font-bold text-white">Edit Channel</h3>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-[8px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-            title="Close"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <Tooltip label="Close">
+            <button
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-[8px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </Tooltip>
         </div>
 
         <div className="space-y-4">
@@ -646,27 +648,30 @@ export function BoxSettingsClient({
                         {/* Channel actions — admin only */}
                         {isAdmin && (
                           <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                            <Link
-                              href={`/box/${box.short_id}/c/${channel.short_id}`}
-                              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-                              title="View channel"
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                            </Link>
-                            <button
-                              onClick={() => setEditingChannel(channel)}
-                              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-                              title="Edit channel"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleArchiveChannel(channel.id, !channel.is_archived)}
-                              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-                              title={channel.is_archived ? "Unarchive" : "Archive"}
-                            >
-                              <Archive className="h-3.5 w-3.5" />
-                            </button>
+                            <Tooltip label="View channel">
+                              <Link
+                                href={`/box/${box.short_id}/c/${channel.short_id}`}
+                                className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </Link>
+                            </Tooltip>
+                            <Tooltip label="Edit channel">
+                              <button
+                                onClick={() => setEditingChannel(channel)}
+                                className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                            </Tooltip>
+                            <Tooltip label={channel.is_archived ? "Unarchive" : "Archive"}>
+                              <button
+                                onClick={() => handleArchiveChannel(channel.id, !channel.is_archived)}
+                                className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+                              >
+                                <Archive className="h-3.5 w-3.5" />
+                              </button>
+                            </Tooltip>
                           </div>
                         )}
                       </div>
@@ -750,14 +755,15 @@ export function BoxSettingsClient({
 
                         {/* Admin actions */}
                         {isOwner && member.user_id !== user.id && (
-                          <button
-                            onClick={() => handleRemoveMember(member.id)}
-                            className="flex h-7 items-center gap-1 rounded-[6px] px-2 text-[12px] text-[#555] opacity-0 transition-all hover:bg-[#2a1520] hover:text-[#de1135] group-hover:opacity-100"
-                            title="Remove member"
-                          >
-                            <X className="h-3 w-3" />
-                            Remove
-                          </button>
+                          <Tooltip label="Remove member">
+                            <button
+                              onClick={() => handleRemoveMember(member.id)}
+                              className="flex h-7 items-center gap-1 rounded-[6px] px-2 text-[12px] text-[#555] opacity-0 transition-all hover:bg-[#2a1520] hover:text-[#de1135] group-hover:opacity-100"
+                            >
+                              <X className="h-3 w-3" />
+                              Remove
+                            </button>
+                          </Tooltip>
                         )}
                       </div>
                     );

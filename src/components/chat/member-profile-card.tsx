@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { CommentDiscussionIcon as MessageSquare, XIcon as X, LocationIcon as MapPin, BriefcaseIcon as Briefcase, GlobeIcon as Globe, ClockIcon as Clock, CalendarIcon as Calendar, CircleIcon as Circle, LoopIcon as Loader2, PersonIcon as User, DeviceMobileIcon as Phone, MailIcon as Mail } from "@primer/octicons-react";
 import { useRouter } from "next/navigation";
 import { getInitials, type SenderData } from "@/lib/chat-helpers";
+import { Tooltip } from "@/components/ui/tooltip";
 
 // ── Full profile data fetched from DB ──
 
@@ -367,13 +368,14 @@ function UserProfileModal({
             {/* Banner */}
             <div className="relative">
               <div className="h-24 rounded-t-[12px] bg-gradient-to-r from-[#1a1a2e] via-[#16213e] to-[#0f3460]" />
-              <button
-                onClick={onClose}
-                className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white/70 transition-colors hover:bg-black/60 hover:text-white"
-                title="Close"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <Tooltip label="Close">
+                <button
+                  onClick={onClose}
+                  className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white/70 transition-colors hover:bg-black/60 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </Tooltip>
               <div className="absolute -bottom-8 left-6">
                 <div className="relative">
                   {profile.avatar_url ? (

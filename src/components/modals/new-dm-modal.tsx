@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { XIcon as X, SearchIcon as Search, LoopIcon as Loader2 } from "@primer/octicons-react";
 import { useRouter } from "next/navigation";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface SearchResult {
   id: string;
@@ -111,13 +112,14 @@ export function NewDmModal({ open, onClose, currentUserId }: NewDmModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#1a1a1a] px-5 py-4">
           <h2 className="text-[16px] font-bold text-white">New Message</h2>
-          <button
-            onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-            title="Close"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <Tooltip label="Close">
+            <button
+              onClick={onClose}
+              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </Tooltip>
         </div>
 
         {/* Search */}
