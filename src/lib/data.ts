@@ -301,7 +301,7 @@ export async function getBoxMembers(boxId: string) {
   // Use admin client to bypass RLS — callers always verify box membership first
   const { data: members, error } = await supabaseAdmin
     .from("box_members")
-    .select("id, user_id, role, joined_at, profiles(id, email, full_name, avatar_url, status, username)")
+    .select("id, user_id, role, joined_at, profiles(id, email, full_name, avatar_url, status, username, status_text, status_emoji, status_expires_at)")
     .eq("box_id", boxId)
     .order("joined_at", { ascending: true });
 
@@ -311,7 +311,7 @@ export async function getBoxMembers(boxId: string) {
   }
 
   const profile = (p: unknown) =>
-    p as { id: string; email: string; full_name: string; avatar_url: string | null; status: string; username: string };
+    p as { id: string; email: string; full_name: string; avatar_url: string | null; status: string; username: string; status_text: string | null; status_emoji: string | null; status_expires_at: string | null };
 
   return (
     members?.map((m) => ({
@@ -324,6 +324,9 @@ export async function getBoxMembers(boxId: string) {
       avatar_url: profile(m.profiles).avatar_url,
       status: profile(m.profiles).status,
       username: profile(m.profiles).username || (profile(m.profiles).email || "").split("@")[0] || "user",
+      status_text: profile(m.profiles).status_text,
+      status_emoji: profile(m.profiles).status_emoji,
+      status_expires_at: profile(m.profiles).status_expires_at,
     })) ?? []
   );
 }
