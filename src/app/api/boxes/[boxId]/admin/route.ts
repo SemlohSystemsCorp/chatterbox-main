@@ -33,6 +33,13 @@ export async function GET(
 
   // ── Stats ──
   if (section === "stats") {
+    // Fetch channel IDs once to avoid repeated queries
+    const { data: boxChannels } = await supabase
+      .from("channels")
+      .select("id")
+      .eq("box_id", boxId);
+    const channelIds = boxChannels?.map((c) => c.id) ?? [];
+
     const [
       { count: memberCount },
       { count: channelCount },
@@ -49,33 +56,21 @@ export async function GET(
         .select("*", { count: "exact", head: true })
         .eq("box_id", boxId)
         .eq("is_archived", false),
-      supabase
-        .from("messages")
-        .select("*", { count: "exact", head: true })
-        .in(
-          "channel_id",
-          (
-            await supabase
-              .from("channels")
-              .select("id")
-              .eq("box_id", boxId)
-          ).data?.map((c) => c.id) ?? []
-        ),
+      channelIds.length > 0
+        ? supabase
+            .from("messages")
+            .select("*", { count: "exact", head: true })
+            .in("channel_id", channelIds)
+        : Promise.resolve({ count: 0, data: null, error: null }),
       // Messages per day (last 14 days)
-      supabase
-        .from("messages")
-        .select("created_at, channel_id")
-        .in(
-          "channel_id",
-          (
-            await supabase
-              .from("channels")
-              .select("id")
-              .eq("box_id", boxId)
-          ).data?.map((c) => c.id) ?? []
-        )
-        .gte("created_at", new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString())
-        .order("created_at", { ascending: true }),
+      channelIds.length > 0
+        ? supabase
+            .from("messages")
+            .select("created_at, channel_id")
+            .in("channel_id", channelIds)
+            .gte("created_at", new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString())
+            .order("created_at", { ascending: true })
+        : Promise.resolve({ data: [], error: null }),
       // Member joins over time
       supabase
         .from("box_members")

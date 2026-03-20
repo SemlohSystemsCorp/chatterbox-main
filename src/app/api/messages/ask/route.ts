@@ -52,6 +52,18 @@ export async function POST(request: NextRequest) {
       .limit(30);
 
     if (box_id) {
+      // Verify user is a member of this box
+      const { data: membership } = await supabase
+        .from("box_members")
+        .select("id")
+        .eq("box_id", box_id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!membership) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
       const { data: boxChannels } = await supabase
         .from("channels")
         .select("id")

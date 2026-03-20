@@ -401,19 +401,23 @@ export function ChannelPageClient({
         method: "POST",
         body: formData,
       });
-      const data = await res.json();
 
-      if (res.ok) {
-        setAttachments((prev) => [
-          ...prev,
-          {
-            url: data.url,
-            file_name: data.file_name,
-            file_type: data.file_type,
-            file_size: data.file_size,
-          },
-        ]);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        console.error("Upload failed:", errData?.error || res.statusText);
+        return;
       }
+
+      const data = await res.json();
+      setAttachments((prev) => [
+        ...prev,
+        {
+          url: data.url,
+          file_name: data.file_name,
+          file_type: data.file_type,
+          file_size: data.file_size,
+        },
+      ]);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -439,9 +443,12 @@ export function ChannelPageClient({
             method: "POST",
             body: formData,
           });
-          const data = await res.json();
 
-          if (res.ok) {
+          if (!res.ok) {
+            const errData = await res.json().catch(() => null);
+            console.error("Upload failed:", errData?.error || res.statusText);
+          } else {
+            const data = await res.json();
             setAttachments((prev) => [
               ...prev,
               {
@@ -539,26 +546,32 @@ export function ChannelPageClient({
   }, []);
 
   // ── Mark as read (throttled) ──
+  const channelIdRef = useRef(channel.id);
+  channelIdRef.current = channel.id;
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+
   const markAsRead = useCallback(() => {
     if (markAsReadTimer.current) return;
     markAsReadTimer.current = setTimeout(() => {
       markAsReadTimer.current = null;
     }, 2000);
 
-    const last = messages[messages.length - 1];
+    const last = messagesRef.current[messagesRef.current.length - 1];
     if (!last || last.id.startsWith("temp-")) return;
 
-    setUnreadCounts((prev) => ({ ...prev, [channel.id]: 0 }));
+    const currentChannelId = channelIdRef.current;
+    setUnreadCounts((prev) => ({ ...prev, [currentChannelId]: 0 }));
 
     fetch("/api/messages/read", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        channel_id: channel.id,
+        channel_id: currentChannelId,
         timestamp: last.created_at,
       }),
     });
-  }, [messages, channel.id]);
+  }, []);
 
   // Keep refs in sync for use inside realtime callbacks (avoids stale closures)
   markAsReadRef.current = markAsRead;

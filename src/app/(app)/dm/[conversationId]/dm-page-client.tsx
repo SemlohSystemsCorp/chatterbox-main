@@ -581,24 +581,29 @@ export function DmPageClient({
   }, [conversation.id]);
 
   // ── Mark as read (throttled) ──
+  const conversationIdRef = useRef(conversation.id);
+  conversationIdRef.current = conversation.id;
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+
   const markAsRead = useCallback(() => {
     if (markAsReadTimer.current) return;
     markAsReadTimer.current = setTimeout(() => {
       markAsReadTimer.current = null;
     }, 2000);
 
-    const last = messages[messages.length - 1];
+    const last = messagesRef.current[messagesRef.current.length - 1];
     if (!last || last.id.startsWith("temp-")) return;
 
     fetch("/api/messages/read", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        conversation_id: conversation.id,
+        conversation_id: conversationIdRef.current,
         timestamp: last.created_at,
       }),
     });
-  }, [messages, conversation.id]);
+  }, []);
 
   // Keep refs in sync for realtime handlers
   showScrollDownRef.current = showScrollDown;

@@ -32,10 +32,12 @@ export async function GET(request: NextRequest) {
   // Resolve `from:` filter — look up user by name/username
   let fromUserId: string | null = null;
   if (fromUser) {
+    // Escape special LIKE characters to prevent pattern injection
+    const safeFromUser = fromUser.replace(/[%_\\]/g, "\\$&");
     const { data: matchedProfiles } = await supabase
       .from("profiles")
       .select("id")
-      .or(`username.ilike.%${fromUser}%,full_name.ilike.%${fromUser}%`)
+      .or(`username.ilike.%${safeFromUser}%,full_name.ilike.%${safeFromUser}%`)
       .limit(1);
     if (matchedProfiles && matchedProfiles.length > 0) {
       fromUserId = matchedProfiles[0].id;
@@ -48,10 +50,11 @@ export async function GET(request: NextRequest) {
   // Resolve `in:` filter — look up channel by name
   let inChannelId: string | null = null;
   if (inChannel) {
+    const safeInChannel = inChannel.replace(/[%_\\]/g, "\\$&");
     let channelQuery = supabase
       .from("channels")
       .select("id")
-      .ilike("name", `%${inChannel}%`)
+      .ilike("name", `%${safeInChannel}%`)
       .limit(1);
     if (boxId) {
       channelQuery = channelQuery.eq("box_id", boxId);

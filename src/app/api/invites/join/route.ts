@@ -163,50 +163,56 @@ export async function POST(request: NextRequest) {
     .neq("user_id", user.id);
 
   if (existingMembers && existingMembers.length > 0) {
-    for (const member of existingMembers) {
-      // Check if a 1:1 conversation already exists between these two users
-      const { data: existing } = await admin
-        .from("conversation_participants")
-        .select("conversation_id")
-        .eq("user_id", user.id);
+    // Fetch all conversation participations for the new user ONCE
+    const { data: myParticipations } = await admin
+      .from("conversation_participants")
+      .select("conversation_id")
+      .eq("user_id", user.id);
+    const myConvoIds = new Set(myParticipations?.map((e) => e.conversation_id) ?? []);
 
-      const { data: otherExisting } = await admin
-        .from("conversation_participants")
-        .select("conversation_id")
-        .eq("user_id", member.user_id);
-
-      const myConvos = new Set(existing?.map((e) => e.conversation_id) ?? []);
-      const theirConvos = otherExisting?.map((e) => e.conversation_id) ?? [];
-      const shared = theirConvos.filter((c) => myConvos.has(c));
-
-      // Check if any shared conversation is a 1:1 (not group)
-      let alreadyExists = false;
-      for (const convoId of shared) {
-        const { data: convo } = await admin
-          .from("conversations")
-          .select("is_group")
-          .eq("id", convoId)
-          .single();
-        if (convo && !convo.is_group) {
-          alreadyExists = true;
-          break;
-        }
+    // Fetch non-group conversations the new user is in, to check for existing 1:1s
+    const myNonGroupConvos = new Set<string>();
+    if (myConvoIds.size > 0) {
+      const { data: convos } = await admin
+        .from("conversations")
+        .select("id")
+        .in("id", [...myConvoIds])
+        .eq("is_group", false);
+      for (const c of convos ?? []) {
+        myNonGroupConvos.add(c.id);
       }
+    }
 
-      if (!alreadyExists) {
-        // Create a new 1:1 conversation
-        const { data: newConvo } = await admin
-          .from("conversations")
-          .insert({ is_group: false })
-          .select("id")
-          .single();
+    // Fetch all participants in those 1:1 conversations to find existing pairs
+    const existingDmPartners = new Set<string>();
+    if (myNonGroupConvos.size > 0) {
+      const { data: partners } = await admin
+        .from("conversation_participants")
+        .select("user_id, conversation_id")
+        .in("conversation_id", [...myNonGroupConvos])
+        .neq("user_id", user.id);
+      for (const p of partners ?? []) {
+        existingDmPartners.add(p.user_id);
+      }
+    }
 
-        if (newConvo) {
-          await admin.from("conversation_participants").insert([
-            { conversation_id: newConvo.id, user_id: user.id },
-            { conversation_id: newConvo.id, user_id: member.user_id },
-          ]);
-        }
+    // Create 1:1 DMs only with members who don't already have one
+    const newDmMembers = existingMembers.filter(
+      (m) => !existingDmPartners.has(m.user_id)
+    );
+
+    for (const member of newDmMembers) {
+      const { data: newConvo } = await admin
+        .from("conversations")
+        .insert({ is_group: false })
+        .select("id")
+        .single();
+
+      if (newConvo) {
+        await admin.from("conversation_participants").insert([
+          { conversation_id: newConvo.id, user_id: user.id },
+          { conversation_id: newConvo.id, user_id: member.user_id },
+        ]);
       }
     }
   }
