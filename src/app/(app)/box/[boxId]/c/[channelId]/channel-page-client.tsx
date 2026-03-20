@@ -37,6 +37,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { usePresence } from "@/hooks/use-presence";
 import { useTyping } from "@/hooks/use-typing";
 import { useContactNames } from "@/hooks/use-contact-names";
+import { useDraft } from "@/hooks/use-draft";
 import {
   MediaPreviewModal,
   type MediaType,
@@ -246,7 +247,12 @@ export function ChannelPageClient({
   const [liveMembers, setLiveMembers] = useState<MemberData[]>(members);
   const [liveConversations, setLiveConversations] = useState<SidebarConversation[]>(conversations);
   const [liveActiveCall, setLiveActiveCall] = useState<ActiveCallData | null>(activeCall ?? null);
-  const [newMessage, setNewMessage] = useState("");
+  const { draft, setDraft, clearDraft } = useDraft(`channel-${channel.id}`);
+  const [newMessage, setNewMessageRaw] = useState(draft);
+  const setNewMessage = useCallback((value: string) => {
+    setNewMessageRaw(value);
+    if (value) setDraft(value); else clearDraft();
+  }, [setDraft, clearDraft]);
   const [sending, setSending] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
@@ -1313,6 +1319,26 @@ export function ChannelPageClient({
         if (result.type === "open_poll") {
           setNewMessage("");
           setCreatePollOpen(true);
+          return;
+        }
+        if (result.type === "mute") {
+          setNewMessage("");
+          // TODO: implement channel mute via API
+          return;
+        }
+        if (result.type === "unmute") {
+          setNewMessage("");
+          // TODO: implement channel unmute via API
+          return;
+        }
+        if (result.type === "set_nick" && result.targetUser) {
+          setNewMessage("");
+          // TODO: resolve targetUser to user_id and call /api/contacts/nickname
+          return;
+        }
+        if (result.type === "open_dm" && result.targetUser) {
+          setNewMessage("");
+          // TODO: resolve targetUser and navigate to DM
           return;
         }
         if (result.type === "message" && result.content) {

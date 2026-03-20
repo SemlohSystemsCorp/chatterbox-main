@@ -34,6 +34,7 @@ import { NotificationBell } from "@/components/notifications/notification-bell";
 import { usePresence } from "@/hooks/use-presence";
 import { useTyping } from "@/hooks/use-typing";
 import { useContactNames } from "@/hooks/use-contact-names";
+import { useDraft } from "@/hooks/use-draft";
 import {
   MediaPreviewModal,
   type MediaType,
@@ -126,7 +127,12 @@ export function DmPageClient({
   const [liveMembers, setLiveMembers] = useState<MemberData[]>(members);
   const [liveConversations, setLiveConversations] = useState<SidebarConversation[]>(conversations);
   const [liveActiveCall, setLiveActiveCall] = useState<ActiveCallData | null>(activeCall ?? null);
-  const [newMessage, setNewMessage] = useState("");
+  const { draft, setDraft, clearDraft } = useDraft(`dm-${conversation.id}`);
+  const [newMessage, setNewMessageRaw] = useState(draft);
+  const setNewMessage = useCallback((value: string) => {
+    setNewMessageRaw(value);
+    if (value) setDraft(value); else clearDraft();
+  }, [setDraft, clearDraft]);
   const [sending, setSending] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
@@ -1001,6 +1007,18 @@ export function DmPageClient({
         if (result.type === "open_poll") {
           setNewMessage("");
           setCreatePollOpen(true);
+          return;
+        }
+        if (result.type === "mute" || result.type === "unmute") {
+          setNewMessage("");
+          return;
+        }
+        if (result.type === "set_nick" && result.targetUser) {
+          setNewMessage("");
+          return;
+        }
+        if (result.type === "open_dm" && result.targetUser) {
+          setNewMessage("");
           return;
         }
         if (result.type === "message" && result.content) {

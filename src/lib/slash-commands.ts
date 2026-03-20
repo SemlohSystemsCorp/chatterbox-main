@@ -20,15 +20,27 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: "invite", description: "Share an invite link", usage: "/invite" },
   { name: "date", description: "Send the current date and time", usage: "/date" },
   { name: "poll", description: "Create a poll", usage: "/poll" },
+  { name: "remind", description: "Set a reminder", usage: "/remind [time] [message]" },
+  { name: "todo", description: "Add a to-do item", usage: "/todo [task]" },
+  { name: "mute", description: "Mute this channel", usage: "/mute" },
+  { name: "unmute", description: "Unmute this channel", usage: "/unmute" },
+  { name: "nick", description: "Set a nickname for someone", usage: "/nick @user [nickname]" },
+  { name: "dm", description: "Send a direct message", usage: "/dm @user [message]" },
+  { name: "code", description: "Send a code block", usage: "/code [language] [code]" },
+  { name: "timestamp", description: "Insert a formatted timestamp", usage: "/timestamp" },
 ];
 
 export interface CommandResult {
-  /** "message" = send as normal message, "status" = set status (no message), "giphy" = needs async gif lookup, "clear_status" = clear status, "open_poll" = open poll modal */
-  type: "message" | "status" | "giphy" | "clear_status" | "open_poll";
+  /** "message" = send as normal message, "status" = set status (no message), "giphy" = needs async gif lookup, "clear_status" = clear status, "open_poll" = open poll modal, "mute" / "unmute" = toggle channel mute, "set_nick" = set contact nickname, "open_dm" = open DM with user */
+  type: "message" | "status" | "giphy" | "clear_status" | "open_poll" | "mute" | "unmute" | "set_nick" | "open_dm";
   content?: string;
   statusEmoji?: string | null;
   statusText?: string;
   giphyQuery?: string;
+  /** Target username for /nick, /dm */
+  targetUser?: string;
+  /** Nickname value for /nick */
+  nickname?: string;
 }
 
 export function parseSlashCommand(input: string): { command: string; args: string } | null {
@@ -128,6 +140,73 @@ export function executeCommand(command: string, args: string, userName: string):
 
     case "poll":
       return { type: "open_poll" };
+
+    case "remind": {
+      if (!args.trim()) return null;
+      // Parse: /remind 5m Take out the trash  OR  /remind 2h Check deployment
+      const remindMatch = args.match(/^(\d+)\s*(s|sec|m|min|h|hr|d|day)s?\s+(.+)/i);
+      if (!remindMatch) {
+        return { type: "message", content: `⏰ Usage: /remind <number><s|m|h|d> <message>` };
+      }
+      const amount = parseInt(remindMatch[1]);
+      const unit = remindMatch[2].toLowerCase();
+      const reminderText = remindMatch[3].trim();
+      const unitLabels: Record<string, string> = { s: "second", sec: "second", m: "minute", min: "minute", h: "hour", hr: "hour", d: "day", day: "day" };
+      const label = unitLabels[unit] || unit;
+      return {
+        type: "message",
+        content: `⏰ Reminder set for **${amount} ${label}${amount !== 1 ? "s" : ""}**: ${reminderText}`,
+      };
+    }
+
+    case "todo": {
+      if (!args.trim()) return null;
+      return { type: "message", content: `☐ **To-do:** ${args.trim()}` };
+    }
+
+    case "mute":
+      return { type: "mute" };
+
+    case "unmute":
+      return { type: "unmute" };
+
+    case "nick": {
+      if (!args.trim()) return null;
+      // Parse: /nick @username Cool Nickname
+      const nickMatch = args.match(/^@(\S+)\s+(.*)/);
+      if (!nickMatch) {
+        return { type: "message", content: `Usage: /nick @user [nickname]` };
+      }
+      return { type: "set_nick", targetUser: nickMatch[1], nickname: nickMatch[2].trim() || undefined };
+    }
+
+    case "dm": {
+      if (!args.trim()) return null;
+      // Parse: /dm @username Hey there!
+      const dmMatch = args.match(/^@(\S+)\s*(.*)/);
+      if (!dmMatch) {
+        return { type: "message", content: `Usage: /dm @user [message]` };
+      }
+      return { type: "open_dm", targetUser: dmMatch[1], content: dmMatch[2].trim() || undefined };
+    }
+
+    case "code": {
+      if (!args.trim()) return null;
+      // Parse: /code js console.log("hello")  OR  /code just some code
+      const codeMatch = args.match(/^(\S+)\s+([\s\S]+)/);
+      if (codeMatch) {
+        return { type: "message", content: `\`\`\`${codeMatch[1]}\n${codeMatch[2].trim()}\n\`\`\`` };
+      }
+      return { type: "message", content: `\`\`\`\n${args.trim()}\n\`\`\`` };
+    }
+
+    case "timestamp": {
+      const now = new Date();
+      return {
+        type: "message",
+        content: `\`${now.toISOString()}\` (${now.toLocaleString()})`,
+      };
+    }
 
     default:
       return null;

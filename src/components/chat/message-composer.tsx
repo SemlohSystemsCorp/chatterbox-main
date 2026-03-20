@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { PaperAirplaneIcon as Send, PlusIcon as Plus, SmileyIcon as Smile, ReplyIcon as Reply, XIcon as X, ImageIcon as Image, ClockIcon as Clock } from "@primer/octicons-react";
+import { PaperAirplaneIcon as Send, PlusIcon as Plus, SmileyIcon as Smile, ReplyIcon as Reply, XIcon as X, ImageIcon as Image, ClockIcon as Clock, BoldIcon as Bold, ItalicIcon as Italic, StrikethroughIcon as Strikethrough, CodeIcon as Code, ListUnorderedIcon as List, ListOrderedIcon as ListOrdered, QuoteIcon as Quote } from "@primer/octicons-react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { EmojiPicker } from "@/components/emoji-picker";
 import { GifPicker } from "@/components/gif-picker";
 import { ToneAdjuster } from "@/components/chat/tone-adjuster";
-import { MentionPicker } from "@/components/chat/mention-picker";
+import { MentionPicker, type SpecialMention } from "@/components/chat/mention-picker";
 import { SlashCommandPicker } from "@/components/chat/slash-command-picker";
 import { SchedulePicker } from "@/components/chat/schedule-picker";
 import type { MessageData, MemberData, SidebarChannel } from "@/lib/chat-helpers";
@@ -198,8 +198,38 @@ export function MessageComposer({
     [newMessage, mentionStart, mentionQuery, onNewMessageChange, inputRef],
   );
 
+  const handleSpecialMentionSelect = useCallback(
+    (mention: SpecialMention) => {
+      const before = newMessage.slice(0, mentionStart);
+      const after = newMessage.slice(
+        mentionStart + 1 + (mentionQuery?.length ?? 0),
+      );
+      const tag = `<@${mention.handle}>`;
+      const updated = `${before}${tag} ${after}`;
+      onNewMessageChange(updated);
+      setMentionQuery(null);
+
+      requestAnimationFrame(() => {
+        const textarea = inputRef.current;
+        if (textarea) {
+          const pos = mentionStart + `${tag} `.length;
+          textarea.focus();
+          textarea.setSelectionRange(pos, pos);
+        }
+      });
+    },
+    [newMessage, mentionStart, mentionQuery, onNewMessageChange, inputRef],
+  );
+
   const handleKeyDownWithMention = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // Formatting shortcuts: Ctrl/Cmd + B/I/E
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key === "b") { e.preventDefault(); applyFormat("**"); return; }
+        if (e.key === "i") { e.preventDefault(); applyFormat("*"); return; }
+        if (e.key === "e") { e.preventDefault(); applyFormat("`"); return; }
+      }
+
       // If slash picker is open, let it handle keys
       if (slashQuery !== null && newMessage.startsWith("/")) {
         if (["ArrowDown", "ArrowUp", "Enter", "Tab", "Escape"].includes(e.key)) {
@@ -221,7 +251,7 @@ export function MessageComposer({
       }
       onKeyDown(e);
     },
-    [slashQuery, newMessage, mentionQuery, members, channels, scheduledFor, onSchedule, onKeyDown],
+    [slashQuery, newMessage, mentionQuery, members, channels, scheduledFor, onSchedule, onKeyDown, applyFormat],
   );
 
   function handleSendClick() {
@@ -232,6 +262,30 @@ export function MessageComposer({
       onSend();
     }
   }
+
+  /** Wrap selected text (or insert at cursor) with markdown formatting */
+  const applyFormat = useCallback(
+    (prefix: string, suffix?: string) => {
+      const textarea = inputRef.current;
+      if (!textarea) return;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selected = newMessage.slice(start, end);
+      const suf = suffix ?? prefix;
+      const replacement = selected
+        ? `${prefix}${selected}${suf}`
+        : `${prefix}${suf}`;
+      const updated = newMessage.slice(0, start) + replacement + newMessage.slice(end);
+      onNewMessageChange(updated);
+      // Place cursor inside the markers if no selection
+      requestAnimationFrame(() => {
+        textarea.focus();
+        const pos = selected ? start + replacement.length : start + prefix.length;
+        textarea.setSelectionRange(pos, pos);
+      });
+    },
+    [newMessage, onNewMessageChange, inputRef]
+  );
 
   const hasContent = newMessage.trim() || attachments.length > 0;
   const isDisabled = !hasContent || sending || newMessage.length > MAX_MESSAGE_LENGTH;
@@ -264,6 +318,7 @@ export function MessageComposer({
             query={mentionQuery}
             onSelectMember={handleMentionSelect}
             onSelectChannel={handleChannelSelect}
+            onSelectSpecial={handleSpecialMentionSelect}
             onClose={() => setMentionQuery(null)}
           />
         )}
@@ -364,6 +419,84 @@ export function MessageComposer({
             ))}
           </div>
         )}
+
+        {/* Formatting toolbar */}
+        <div className="flex items-center gap-px border-b border-[#1a1a1a] px-3 py-1">
+          <Tooltip label="Bold (Ctrl+B)">
+            <button
+              type="button"
+              onClick={() => applyFormat("**")}
+              className="flex h-6 w-6 items-center justify-center rounded text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <Bold className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+          <Tooltip label="Italic (Ctrl+I)">
+            <button
+              type="button"
+              onClick={() => applyFormat("*")}
+              className="flex h-6 w-6 items-center justify-center rounded text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <Italic className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+          <Tooltip label="Strikethrough">
+            <button
+              type="button"
+              onClick={() => applyFormat("~~")}
+              className="flex h-6 w-6 items-center justify-center rounded text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <Strikethrough className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+          <div className="mx-1 h-4 w-px bg-[#1a1a1a]" />
+          <Tooltip label="Inline code">
+            <button
+              type="button"
+              onClick={() => applyFormat("`")}
+              className="flex h-6 w-6 items-center justify-center rounded text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <Code className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+          <Tooltip label="Code block">
+            <button
+              type="button"
+              onClick={() => applyFormat("```\n", "\n```")}
+              className="flex h-6 w-6 items-center justify-center rounded px-0.5 text-[10px] font-mono text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              {"{ }"}
+            </button>
+          </Tooltip>
+          <div className="mx-1 h-4 w-px bg-[#1a1a1a]" />
+          <Tooltip label="Bulleted list">
+            <button
+              type="button"
+              onClick={() => applyFormat("- ", "")}
+              className="flex h-6 w-6 items-center justify-center rounded text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <List className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+          <Tooltip label="Numbered list">
+            <button
+              type="button"
+              onClick={() => applyFormat("1. ", "")}
+              className="flex h-6 w-6 items-center justify-center rounded text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <ListOrdered className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+          <Tooltip label="Quote">
+            <button
+              type="button"
+              onClick={() => applyFormat("> ", "")}
+              className="flex h-6 w-6 items-center justify-center rounded text-[#555] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <Quote className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+        </div>
 
         <div className="flex items-end px-3 py-2">
           <Tooltip label="Attach file">

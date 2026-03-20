@@ -220,6 +220,14 @@ export function CommandPalette({ boxes, activeBoxId, onOpenSearch }: CommandPale
       // Don't handle other shortcuts when in an input
       if (isInput) return;
 
+      // ? key opens keyboard shortcuts overlay
+      if (e.key === "?" && !open) {
+        e.preventDefault();
+        setOpen(true);
+        setShowShortcuts(true);
+        return;
+      }
+
       // Escape closes palette
       if (e.key === "Escape" && open) {
         e.preventDefault();

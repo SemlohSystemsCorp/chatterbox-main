@@ -1,6 +1,7 @@
 "use client";
 
 import { isTauri, sendNativeNotification } from "@/lib/tauri";
+import { useSettingsStore } from "@/stores/settings-store";
 
 // ── Push Notification Utilities (via Service Worker) ──
 
@@ -85,12 +86,41 @@ export function playNotificationSound() {
   }
 }
 
+/** Check if Do Not Disturb is active based on user settings. */
+function isDndActive(): boolean {
+  const s = useSettingsStore.getState();
+  if (s.mute_all_sounds) return true;
+  if (!s.notification_schedule_enabled) return false;
+
+  const now = new Date();
+  const dayNames = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+  const today = dayNames[now.getDay()];
+  const activeDays = s.notification_schedule_days.split(",").map((d) => d.trim().toLowerCase());
+
+  // If today isn't an active notification day, suppress
+  if (!activeDays.includes(today)) return true;
+
+  // Check if current time is outside the allowed notification window
+  const [startH, startM] = s.notification_schedule_start.split(":").map(Number);
+  const [endH, endM] = s.notification_schedule_end.split(":").map(Number);
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const startMinutes = startH * 60 + startM;
+  const endMinutes = endH * 60 + endM;
+
+  // Outside the start-end window means DND
+  if (currentMinutes < startMinutes || currentMinutes > endMinutes) return true;
+
+  return false;
+}
+
 /**
  * Show a desktop notification via the service worker.
  * Falls back to the Notification API if the SW isn't available.
- * Also plays a notification sound.
+ * Also plays a notification sound. Respects DND/schedule settings.
  */
 export async function showPushNotification(data: PushNotificationData): Promise<boolean> {
+  // Respect Do Not Disturb mode
+  if (isDndActive()) return false;
   // Desktop app: use native OS notifications via Tauri
   if (isTauri) {
     const tabFocused = document.visibilityState === "visible" && document.hasFocus();
