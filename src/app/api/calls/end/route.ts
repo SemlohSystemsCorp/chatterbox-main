@@ -42,6 +42,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Call not found" }, { status: 404 });
   }
 
+  // Verify the caller is actually a participant
+  const { data: participant } = await supabaseAdmin
+    .from("call_participants")
+    .select("id")
+    .eq("call_id", call_id)
+    .eq("user_id", user.id)
+    .is("left_at", null)
+    .maybeSingle();
+
+  if (!participant) {
+    return NextResponse.json({ error: "Not a participant" }, { status: 403 });
+  }
+
   // Mark the user as having left
   await supabaseAdmin
     .from("call_participants")

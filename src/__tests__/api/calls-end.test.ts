@@ -96,6 +96,8 @@ describe("POST /api/calls/end", () => {
   it("uses supabaseAdmin (not user client) for all DB operations", async () => {
     // calls → found
     const callsChain = createChainable({ data: CALL, error: null });
+    // call_participants check → found
+    const participantsCheckChain = createChainable({ data: { id: "part-1" }, error: null });
     // call_participants update → left_at
     const participantsUpdateChain = createChainable({ data: null, error: null });
     // call_participants count → 0 (no one left)
@@ -114,17 +116,18 @@ describe("POST /api/calls/end", () => {
     // call_participants delete
     const participantsDeleteChain = createChainable({ data: null, error: null });
 
-    let fromCallCount = 0;
+    let participantIdx = 0;
+    let callsIdx = 0;
     mockAdminFrom.mockImplementation((table: string) => {
       if (table === "calls") {
-        fromCallCount++;
-        return fromCallCount === 1 ? callsChain : callsUpdateChain;
+        callsIdx++;
+        return callsIdx === 1 ? callsChain : callsUpdateChain;
       }
       if (table === "call_participants") {
-        fromCallCount++;
-        // 1st = update left_at, 2nd = count, 3rd = delete
-        if (fromCallCount === 2) return participantsUpdateChain;
-        if (fromCallCount === 3) return participantsCountChain;
+        participantIdx++;
+        if (participantIdx === 1) return participantsCheckChain;
+        if (participantIdx === 2) return participantsUpdateChain;
+        if (participantIdx === 3) return participantsCountChain;
         return participantsDeleteChain;
       }
       if (table === "channel_events") return eventsChain;
@@ -148,6 +151,7 @@ describe("POST /api/calls/end", () => {
 
   it("marks participant as left before checking count", async () => {
     const callsChain = createChainable({ data: CALL, error: null });
+    const participantsCheckChain = createChainable({ data: { id: "part-1" }, error: null });
 
     const updateFn = vi.fn().mockReturnThis();
     const participantsChain = {
@@ -170,7 +174,9 @@ describe("POST /api/calls/end", () => {
       if (table === "calls") return callsChain;
       if (table === "call_participants") {
         callIdx++;
-        return callIdx === 1 ? participantsChain : countChain;
+        if (callIdx === 1) return participantsCheckChain;
+        if (callIdx === 2) return participantsChain;
+        return countChain;
       }
       return createChainable();
     });
@@ -195,6 +201,7 @@ describe("POST /api/calls/end", () => {
     const callsUpdateChain = createChainable({ data: { id: "call-1" }, error: null });
     const eventsChain = createChainable({ data: null, error: null });
 
+    const participantsCheckChain = createChainable({ data: { id: "part-1" }, error: null });
     const participantsUpdateChain = createChainable({ data: null, error: null });
     const participantsCountChain = createChainable();
     participantsCountChain.select = vi.fn().mockReturnValue({
@@ -232,8 +239,9 @@ describe("POST /api/calls/end", () => {
       }
       if (table === "call_participants") {
         participantIdx++;
-        if (participantIdx === 1) return participantsUpdateChain;
-        if (participantIdx === 2) return participantsCountChain;
+        if (participantIdx === 1) return participantsCheckChain;
+        if (participantIdx === 2) return participantsUpdateChain;
+        if (participantIdx === 3) return participantsCountChain;
         return participantsDeleteChain;
       }
       if (table === "channel_events") return eventsChain;
@@ -256,6 +264,7 @@ describe("POST /api/calls/end", () => {
     const callsChain = createChainable({ data: CALL, error: null });
     const callsUpdateChain = createChainable({ data: { id: "call-1" }, error: null });
     const eventsChain = createChainable({ data: null, error: null });
+    const participantsCheckChain = createChainable({ data: { id: "part-1" }, error: null });
     const participantsUpdateChain = createChainable({ data: null, error: null });
     const participantsCountChain = createChainable();
     participantsCountChain.select = vi.fn().mockReturnValue({
@@ -276,8 +285,9 @@ describe("POST /api/calls/end", () => {
       }
       if (table === "call_participants") {
         participantIdx++;
-        if (participantIdx === 1) return participantsUpdateChain;
-        if (participantIdx === 2) return participantsCountChain;
+        if (participantIdx === 1) return participantsCheckChain;
+        if (participantIdx === 2) return participantsUpdateChain;
+        if (participantIdx === 3) return participantsCountChain;
         return participantsDeleteChain;
       }
       if (table === "channel_events") return eventsChain;
@@ -299,6 +309,7 @@ describe("POST /api/calls/end", () => {
     const callsUpdateChain = createChainable({ data: { id: "call-1" }, error: null });
     const eventsInsert = vi.fn().mockReturnThis();
     const eventsChain = { ...createChainable(), insert: eventsInsert };
+    const participantsCheckChain = createChainable({ data: { id: "part-1" }, error: null });
     const participantsUpdateChain = createChainable({ data: null, error: null });
     const participantsCountChain = createChainable();
     participantsCountChain.select = vi.fn().mockReturnValue({
@@ -319,8 +330,9 @@ describe("POST /api/calls/end", () => {
       }
       if (table === "call_participants") {
         participantIdx++;
-        if (participantIdx === 1) return participantsUpdateChain;
-        if (participantIdx === 2) return participantsCountChain;
+        if (participantIdx === 1) return participantsCheckChain;
+        if (participantIdx === 2) return participantsUpdateChain;
+        if (participantIdx === 3) return participantsCountChain;
         return participantsDeleteChain;
       }
       if (table === "channel_events") return eventsChain;
@@ -351,6 +363,7 @@ describe("POST /api/calls/end", () => {
     const dmCall = { ...CALL, channel_id: null, conversation_id: "conv-1" };
     const callsChain = createChainable({ data: dmCall, error: null });
     const callsUpdateChain = createChainable({ data: { id: "call-1" }, error: null });
+    const participantsCheckChain = createChainable({ data: { id: "part-1" }, error: null });
     const participantsUpdateChain = createChainable({ data: null, error: null });
     const participantsCountChain = createChainable();
     participantsCountChain.select = vi.fn().mockReturnValue({
@@ -371,8 +384,9 @@ describe("POST /api/calls/end", () => {
       }
       if (table === "call_participants") {
         participantIdx++;
-        if (participantIdx === 1) return participantsUpdateChain;
-        if (participantIdx === 2) return participantsCountChain;
+        if (participantIdx === 1) return participantsCheckChain;
+        if (participantIdx === 2) return participantsUpdateChain;
+        if (participantIdx === 3) return participantsCountChain;
         return participantsDeleteChain;
       }
       if (table === "channel_events") {
@@ -396,6 +410,7 @@ describe("POST /api/calls/end", () => {
     const callsChain = createChainable({ data: CALL, error: null });
     // maybeSingle returns null — another request already set ended_at
     const callsUpdateChain = createChainable({ data: null, error: null });
+    const participantsCheckChain = createChainable({ data: { id: "part-1" }, error: null });
     const participantsUpdateChain = createChainable({ data: null, error: null });
     const participantsCountChain = createChainable();
     participantsCountChain.select = vi.fn().mockReturnValue({
@@ -415,7 +430,8 @@ describe("POST /api/calls/end", () => {
       }
       if (table === "call_participants") {
         participantIdx++;
-        if (participantIdx === 1) return participantsUpdateChain;
+        if (participantIdx === 1) return participantsCheckChain;
+        if (participantIdx === 2) return participantsUpdateChain;
         return participantsCountChain;
       }
       return createChainable();

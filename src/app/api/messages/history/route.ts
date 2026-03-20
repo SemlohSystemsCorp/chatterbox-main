@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
   const channelId = searchParams.get("channel_id");
   const conversationId = searchParams.get("conversation_id");
   const before = searchParams.get("before"); // ISO timestamp cursor
-  const limit = Math.min(Number(searchParams.get("limit") || 50), 100);
+  const parsedLimit = Number(searchParams.get("limit") || 50);
+  const limit = Number.isNaN(parsedLimit) ? 50 : Math.min(Math.max(parsedLimit, 1), 100);
 
   if (!channelId && !conversationId) {
     return NextResponse.json(

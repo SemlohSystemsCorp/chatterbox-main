@@ -57,7 +57,7 @@ export function usePresence(
             .from("profiles")
             .update({ status: "online" })
             .eq("id", userId)
-            .then();
+            .then(() => {}, () => {});
         }
       });
 
@@ -91,7 +91,7 @@ export function usePresence(
         .from("profiles")
         .update({ status: "offline" })
         .eq("id", userId)
-        .then();
+        .then(() => {}, () => {});
       supabase.removeChannel(channel);
       channelRef.current = null;
     };

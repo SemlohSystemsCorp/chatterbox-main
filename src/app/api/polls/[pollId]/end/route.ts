@@ -27,6 +27,36 @@ export async function POST(
     return NextResponse.json({ error: "Poll not found" }, { status: 404 });
   }
 
+  // Verify user has access to the channel/conversation
+  if (poll.channel_id) {
+    const { data: ch } = await supabase
+      .from("channels")
+      .select("box_id")
+      .eq("id", poll.channel_id)
+      .single();
+    if (ch) {
+      const { data: membership } = await supabase
+        .from("box_members")
+        .select("id")
+        .eq("box_id", ch.box_id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!membership) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
+  } else if (poll.conversation_id) {
+    const { data: participant } = await supabase
+      .from("conversation_participants")
+      .select("id")
+      .eq("conversation_id", poll.conversation_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!participant) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
+
   // Only fire event if it's actually expired
   if (!poll.expires_at || new Date(poll.expires_at) >= new Date()) {
     return NextResponse.json({ error: "Poll has not expired yet" }, { status: 400 });

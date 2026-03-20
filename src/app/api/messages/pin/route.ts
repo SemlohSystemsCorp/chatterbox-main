@@ -200,16 +200,17 @@ export async function DELETE(request: NextRequest) {
       .select("box_id")
       .eq("id", channelId)
       .single();
-    if (ch) {
-      const { data: membership } = await supabase
-        .from("box_members")
-        .select("id")
-        .eq("box_id", ch.box_id)
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (!membership) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
+    if (!ch) {
+      return NextResponse.json({ error: "Channel not found" }, { status: 404 });
+    }
+    const { data: membership } = await supabase
+      .from("box_members")
+      .select("id")
+      .eq("box_id", ch.box_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!membership) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
   } else if (conversationId) {
     const { data: participant } = await supabase

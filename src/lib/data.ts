@@ -122,7 +122,7 @@ export async function getChannelMembers(supabase: Awaited<ReturnType<typeof crea
       full_name: profile(m.profiles).full_name,
       email: profile(m.profiles).email,
       avatar_url: profile(m.profiles).avatar_url,
-      username: profile(m.profiles).username || profile(m.profiles).email.split("@")[0],
+      username: profile(m.profiles).username || (profile(m.profiles).email || "").split("@")[0] || "user",
     })) ?? []
   );
 }
@@ -220,7 +220,7 @@ export async function getConversationByShortId(supabase: Awaited<ReturnType<type
         full_name: profile.full_name,
         email: profile.email,
         avatar_url: profile.avatar_url,
-        username: profile.username || profile.email.split("@")[0],
+        username: profile.username || (profile.email || "").split("@")[0] || "user",
       };
     }),
   };
@@ -323,7 +323,7 @@ export async function getBoxMembers(boxId: string) {
       full_name: profile(m.profiles).full_name,
       avatar_url: profile(m.profiles).avatar_url,
       status: profile(m.profiles).status,
-      username: profile(m.profiles).username || profile(m.profiles).email.split("@")[0],
+      username: profile(m.profiles).username || (profile(m.profiles).email || "").split("@")[0] || "user",
     })) ?? []
   );
 }

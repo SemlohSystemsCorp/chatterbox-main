@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -21,11 +21,23 @@ export async function POST(request: Request) {
     );
   }
 
-  // Use service role to bypass RLS
-  const admin = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const admin = supabaseAdmin;
+
+  // Verify all participant IDs exist
+  const { data: validProfiles } = await admin
+    .from("profiles")
+    .select("id")
+    .in("id", participant_ids);
+
+  const validIds = new Set((validProfiles ?? []).map((p) => p.id));
+  const invalidIds = participant_ids.filter((id: string) => !validIds.has(id));
+
+  if (invalidIds.length > 0) {
+    return NextResponse.json(
+      { error: "Some participant IDs are invalid" },
+      { status: 400 }
+    );
+  }
 
   // Create the group conversation
   const { data: conversation, error: convoError } = await admin
