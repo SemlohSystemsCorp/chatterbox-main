@@ -36,6 +36,7 @@ interface DmInfoModalProps {
   };
   currentUserId: string;
   displayName: string;
+  onNicknameChange?: (contactUserId: string, nickname: string | null) => void;
 }
 
 export function DmInfoModal({
@@ -44,6 +45,7 @@ export function DmInfoModal({
   conversation,
   currentUserId,
   displayName,
+  onNicknameChange,
 }: DmInfoModalProps) {
   const backdropRef = useRef<HTMLDivElement>(null);
   const otherParticipants = conversation.participants.filter(
@@ -124,6 +126,7 @@ export function DmInfoModal({
       const data = await res.json();
       setNickname(data.nickname || "");
       setEditingNickname(false);
+      onNicknameChange?.(primaryContact.user_id, data.nickname || null);
     } catch {
       // silent
     } finally {

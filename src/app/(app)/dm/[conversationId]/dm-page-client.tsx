@@ -33,6 +33,7 @@ import { ProfilePanel } from "@/components/saved-messages/profile-panel";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { usePresence } from "@/hooks/use-presence";
 import { useTyping } from "@/hooks/use-typing";
+import { useContactNames } from "@/hooks/use-contact-names";
 import {
   MediaPreviewModal,
   type MediaType,
@@ -171,7 +172,11 @@ export function DmPageClient({
   const otherParticipants = conversation.participants.filter(
     (p) => p.user_id !== user.id
   );
-  const displayName = getConversationName(conversation, user.id);
+  const displayName = conversation.name
+    ? conversation.name
+    : otherParticipants.length === 0
+      ? "Saved Messages"
+      : otherParticipants.map((p) => contactName(p.user_id, p.full_name || p.email)).join(", ");
 
   // Self-DM
   const isSelfDm = otherParticipants.length === 0;
@@ -185,6 +190,7 @@ export function DmPageClient({
     user.id,
     user.fullName
   );
+  const { displayName: contactName, setNickname: setContactNickname } = useContactNames();
 
   // ── File upload ──
   const [uploading, setUploading] = useState(false);
@@ -1380,6 +1386,7 @@ export function DmPageClient({
     inputRef,
     mentionNames,
     boxShortId: box?.short_id,
+    contactName,
   };
 
   return (
@@ -1653,7 +1660,7 @@ export function DmPageClient({
                                 boxShortId={box?.short_id}
                               >
                                 <span className="text-[14px] font-semibold text-white">
-                                  {msg.sender.full_name || msg.sender.email}
+                                  {contactName(msg.sender_id, msg.sender.full_name || msg.sender.email)}
                                 </span>
                               </MemberProfileCard>
                               <span className="text-[11px] text-[#444]">
@@ -1834,6 +1841,7 @@ export function DmPageClient({
         conversation={conversation}
         currentUserId={user.id}
         displayName={displayName}
+        onNicknameChange={setContactNickname}
       />
     </div>
   );

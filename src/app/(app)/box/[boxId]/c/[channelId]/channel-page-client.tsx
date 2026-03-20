@@ -36,6 +36,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { Spinner } from "@/components/ui/spinner";
 import { usePresence } from "@/hooks/use-presence";
 import { useTyping } from "@/hooks/use-typing";
+import { useContactNames } from "@/hooks/use-contact-names";
 import {
   MediaPreviewModal,
   type MediaType,
@@ -327,6 +328,7 @@ export function ChannelPageClient({
     user.id,
     user.fullName
   );
+  const { displayName: contactName } = useContactNames();
 
   // ── File upload ──
   const [uploading, setUploading] = useState(false);
@@ -1775,6 +1777,7 @@ export function ChannelPageClient({
     onPin: handlePin,
     onUnpin: handleUnpin,
     boxShortId: box.short_id,
+    contactName,
   };
 
   return (
@@ -2221,7 +2224,7 @@ export function ChannelPageClient({
                                 boxShortId={box.short_id}
                               >
                                 <span className="text-[14px] font-semibold text-white">
-                                  {msg.sender.full_name || msg.sender.email}
+                                  {contactName(msg.sender_id, msg.sender.full_name || msg.sender.email)}
                                 </span>
                               </MemberProfileCard>
                               <span className="text-[11px] text-[#444]">

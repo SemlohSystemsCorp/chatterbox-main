@@ -8,6 +8,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { BoxSwitcher } from "@/components/chat/box-switcher";
 import { UserPopover } from "@/components/chat/user-popover";
 import { createClient } from "@/lib/supabase/client";
+import { useContactNames } from "@/hooks/use-contact-names";
 import type {
   BoxData,
   SidebarChannel,
@@ -59,6 +60,8 @@ interface ChatSidebarProps {
   /** DM conversations to display in sidebar */
   conversations?: SidebarConversation[];
   onCreateGroupDm?: () => void;
+  /** Whether the user is currently on the Sherlock AI page */
+  isSherlockActive?: boolean;
 }
 
 export function ChatSidebar({
@@ -82,12 +85,14 @@ export function ChatSidebar({
   isSelfDm,
   conversations,
   onCreateGroupDm,
+  isSherlockActive,
 }: ChatSidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const isAdmin = box?.role === "owner" || box?.role === "admin";
   const otherMembers = members.filter((m) => m.user_id !== currentUserId);
   const [activeCalls, setActiveCalls] = useState<SidebarCall[]>(initialCalls ?? []);
+  const { displayName: contactName } = useContactNames();
 
   // Realtime subscription for calls
   useEffect(() => {
@@ -302,7 +307,11 @@ export function ChatSidebar({
           {box && (
             <Link
               href={`/box/${box.short_id}/sherlock`}
-              className="flex items-center gap-2 rounded-[6px] px-2 py-1.5 text-[13px] text-[#666] transition-colors hover:bg-[#111] hover:text-[#aaa]"
+              className={`flex items-center gap-2 rounded-[6px] px-2 py-1.5 text-[13px] transition-colors ${
+                isSherlockActive
+                  ? "bg-[#1a1a1a] font-medium text-white"
+                  : "text-[#666] hover:bg-[#111] hover:text-[#aaa]"
+              }`}
             >
               <div className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#276ef1]">
                 <Bot className="h-3 w-3 text-white" />
@@ -324,7 +333,7 @@ export function ChatSidebar({
                 })
                 .map((c) => {
                   const others = c.participants.filter((p) => p.user_id !== currentUserId);
-                  const displayName = c.name || others.map((p) => p.full_name || p.email).join(", ");
+                  const displayName = c.name || others.map((p) => contactName(p.user_id, p.full_name || p.email)).join(", ");
                   const firstOther = others[0];
                   const isActive = firstOther && firstOther.user_id === activeDmUserId;
                   const liveStatus = firstOther ? getStatus(firstOther.user_id) : "offline";
@@ -420,7 +429,7 @@ export function ChatSidebar({
                         className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ${statusColor} fill-current stroke-[#0a0a0a] stroke-[3]`}
                       />
                     </div>
-                    <span className="truncate">{m.full_name || m.email}</span>
+                    <span className="truncate">{contactName(m.user_id, m.full_name || m.email)}</span>
                   </button>
                 );
               })}

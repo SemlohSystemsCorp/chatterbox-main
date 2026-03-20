@@ -44,6 +44,8 @@ export interface MessageCallbacks {
   onUnpin?: (messageId: string) => void;
   /** Box short_id for profile card DM navigation */
   boxShortId?: string;
+  /** Contact nickname resolver: (userId, fallback) → display name */
+  contactName?: (userId: string, fallback: string) => string;
 }
 
 // ── System message helpers ──
@@ -474,7 +476,7 @@ export function ThreadReplies({
                       boxShortId={cb.boxShortId}
                     >
                       <span className="text-[13px] font-semibold text-white">
-                        {reply.sender.full_name || reply.sender.email}
+                        {cb.contactName ? cb.contactName(reply.sender_id, reply.sender.full_name || reply.sender.email) : (reply.sender.full_name || reply.sender.email)}
                       </span>
                     </MemberProfileCard>
                     <span className="text-[10px] text-[#444]">
