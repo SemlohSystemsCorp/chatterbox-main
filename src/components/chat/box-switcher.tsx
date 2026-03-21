@@ -3,9 +3,10 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDownIcon as ChevronDown, CheckIcon as Check, PlusIcon as Plus, PersonAddIcon as UserPlus, GearIcon as Settings, CommandPaletteIcon as Keyboard, MoonIcon as Moon, SunIcon as Sun, PeopleIcon as Users } from "@primer/octicons-react";
+import { ChevronDownIcon as ChevronDown, CheckIcon as Check, PlusIcon as Plus, PersonAddIcon as UserPlus, GearIcon as Settings, CommandPaletteIcon as Keyboard, MoonIcon as Moon, SunIcon as Sun, PeopleIcon as Users, CommentDiscussionIcon as MessageSquare, AlertIcon as Alert } from "@primer/octicons-react";
 import type { BoxData } from "@/lib/chat-helpers";
 import { useSettingsStore } from "@/stores/settings-store";
+import { FeedbackModal } from "@/components/modals/feedback-modal";
 
 interface BoxSwitcherProps {
   boxes: BoxData[];
@@ -21,6 +22,7 @@ export function BoxSwitcher({ boxes, currentBox, memberCount, onInvite }: BoxSwi
   const { settings, updateSetting } = useSettingsStore();
 
   const isDark = settings.theme !== "light";
+  const [feedbackMode, setFeedbackMode] = useState<"feedback" | "report" | null>(null);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -70,6 +72,9 @@ export function BoxSwitcher({ boxes, currentBox, memberCount, onInvite }: BoxSwi
         <div className="absolute left-0 top-full z-50 w-[280px] rounded-b-[10px] border border-t-0 border-[#1a1a1a] bg-[#111] shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
           {/* Workspace list */}
           <div className="py-1">
+            <div className="px-3 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#444]">
+              Workspaces
+            </div>
             {boxes.map((b) => {
               const isCurrent = b.short_id === currentBox.short_id;
               const initials = b.name
@@ -185,6 +190,30 @@ export function BoxSwitcher({ boxes, currentBox, memberCount, onInvite }: BoxSwi
             </button>
           </div>
 
+          {/* Feedback & Report */}
+          <div className="border-t border-[#1a1a1a] py-1">
+            <button
+              onClick={() => {
+                setOpen(false);
+                setFeedbackMode("feedback");
+              }}
+              className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-[#888] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <MessageSquare className="h-4 w-4" />
+              Send feedback
+            </button>
+            <button
+              onClick={() => {
+                setOpen(false);
+                setFeedbackMode("report");
+              }}
+              className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-[#888] transition-colors hover:bg-[#1a1a1a] hover:text-[#de1135]"
+            >
+              <Alert className="h-4 w-4" />
+              Report a problem
+            </button>
+          </div>
+
           {/* Plan badge */}
           <div className="border-t border-[#1a1a1a] px-3 py-2.5">
             <div className="flex items-center justify-between text-[11px] text-[#444]">
@@ -205,6 +234,13 @@ export function BoxSwitcher({ boxes, currentBox, memberCount, onInvite }: BoxSwi
           </div>
         </div>
       )}
+
+      {/* Feedback / Report modal */}
+      <FeedbackModal
+        open={feedbackMode !== null}
+        onClose={() => setFeedbackMode(null)}
+        mode={feedbackMode ?? "feedback"}
+      />
     </div>
   );
 }

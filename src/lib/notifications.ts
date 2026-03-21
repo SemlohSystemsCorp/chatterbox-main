@@ -124,9 +124,8 @@ export async function showPushNotification(data: PushNotificationData): Promise<
   // Desktop app: use native OS notifications via Tauri
   if (isTauri) {
     const tabFocused = document.visibilityState === "visible" && document.hasFocus();
-    if (!tabFocused) {
-      await sendNativeNotification(data.title, data.body ?? "");
-    }
+    if (tabFocused) return false;
+    await sendNativeNotification(data.title, data.body ?? "");
     playNotificationSound();
     return true;
   }
@@ -134,39 +133,38 @@ export async function showPushNotification(data: PushNotificationData): Promise<
   if (!isNotificationSupported()) return false;
   if (Notification.permission !== "granted") return false;
 
-  // Don't show OS notification if the tab is focused, but still play sound
+  // Don't show OS notification or play sound if the tab is focused — user is looking at the app
   const tabFocused = document.visibilityState === "visible" && document.hasFocus();
 
-  if (!tabFocused) {
-    // Try to send via service worker
-    const registration = await navigator.serviceWorker.ready.catch(() => null);
-    if (registration?.active) {
-      registration.active.postMessage({
-        type: "SHOW_NOTIFICATION",
-        payload: {
-          title: data.title,
-          body: data.body ?? undefined,
-          tag: data.tag ?? `chatterbox-${Date.now()}`,
-          icon: data.avatarUrl || "/icon.png",
-          data: { url: data.url },
-        },
-      });
-    } else {
-      // Fallback: direct Notification API
-      const notification = new Notification(data.title, {
+  if (tabFocused) return false;
+
+  // Try to send via service worker
+  const registration = await navigator.serviceWorker.ready.catch(() => null);
+  if (registration?.active) {
+    registration.active.postMessage({
+      type: "SHOW_NOTIFICATION",
+      payload: {
+        title: data.title,
         body: data.body ?? undefined,
         tag: data.tag ?? `chatterbox-${Date.now()}`,
         icon: data.avatarUrl || "/icon.png",
-      });
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
-      setTimeout(() => notification.close(), 6000);
-    }
+        data: { url: data.url },
+      },
+    });
+  } else {
+    // Fallback: direct Notification API
+    const notification = new Notification(data.title, {
+      body: data.body ?? undefined,
+      tag: data.tag ?? `chatterbox-${Date.now()}`,
+      icon: data.avatarUrl || "/icon.png",
+    });
+    notification.onclick = () => {
+      window.focus();
+      notification.close();
+    };
+    setTimeout(() => notification.close(), 6000);
   }
 
-  // Always play sound (even if tab is focused)
   playNotificationSound();
   return true;
 }

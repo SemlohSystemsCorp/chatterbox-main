@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { HashIcon as Hash, LockIcon as Lock, PlusIcon as Plus, HubotIcon as Bot, CircleIcon as Circle, CommentDiscussionIcon as MessageSquare, DeviceMobileIcon as Phone, BookmarkIcon as Bookmark, PlugIcon as Plug, GearIcon as Gear, PeopleIcon as People } from "@primer/octicons-react";
+import { HashIcon as Hash, LockIcon as Lock, PlusIcon as Plus, HubotIcon as Bot, CircleIcon as Circle, CommentDiscussionIcon as MessageSquare, DeviceMobileIcon as Phone, BookmarkIcon as Bookmark, PlugIcon as Plug, GearIcon as Gear, PeopleIcon as People, LinkIcon, MuteIcon as BellOff, SignOutIcon as LogOut, CopyIcon as Copy, KebabHorizontalIcon as MoreHorizontal } from "@primer/octicons-react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { BoxSwitcher } from "@/components/chat/box-switcher";
 import { UserPopover } from "@/components/chat/user-popover";
@@ -93,6 +93,21 @@ export function ChatSidebar({
   const otherMembers = members.filter((m) => m.user_id !== currentUserId);
   const [activeCalls, setActiveCalls] = useState<SidebarCall[]>(initialCalls ?? []);
   const { displayName: contactName } = useContactNames();
+
+  // Channel context menu
+  const [channelMenu, setChannelMenu] = useState<{ channelId: string; x: number; y: number } | null>(null);
+  const channelMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!channelMenu) return;
+    function handleClick(e: MouseEvent) {
+      if (channelMenuRef.current && !channelMenuRef.current.contains(e.target as Node)) {
+        setChannelMenu(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [channelMenu]);
 
   // Realtime subscription for calls
   useEffect(() => {
@@ -202,27 +217,47 @@ export function ChatSidebar({
                 const isActive = ch.short_id === activeChannelId;
                 const unread = unreadCounts?.[ch.id] ?? 0;
                 return (
-                  <Link
+                  <div
                     key={ch.id}
-                    href={`/box/${box.short_id}/c/${ch.short_id}`}
-                    className={`flex items-center gap-2 rounded-[6px] px-2 py-1.5 text-[13px] transition-colors ${
-                      isActive
-                        ? "bg-[#1a1a1a] font-medium text-white"
-                        : "text-[#666] hover:bg-[#111] hover:text-[#aaa]"
-                    }`}
+                    className="group relative"
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setChannelMenu({ channelId: ch.id, x: e.clientX, y: e.clientY });
+                    }}
                   >
-                    {ch.is_private ? (
-                      <Lock className="h-3.5 w-3.5 shrink-0 text-[#555]" />
-                    ) : (
-                      <Hash className="h-3.5 w-3.5 shrink-0 text-[#555]" />
-                    )}
-                    <span className="truncate">{ch.name}</span>
-                    {!isActive && unread > 0 && (
-                      <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-black">
-                        {unread}
-                      </span>
-                    )}
-                  </Link>
+                    <Link
+                      href={`/box/${box.short_id}/c/${ch.short_id}`}
+                      className={`flex items-center gap-2 rounded-[6px] px-2 py-1.5 text-[13px] transition-colors ${
+                        isActive
+                          ? "bg-[#1a1a1a] font-medium text-white"
+                          : "text-[#666] hover:bg-[#111] hover:text-[#aaa]"
+                      }`}
+                    >
+                      {ch.is_private ? (
+                        <Lock className="h-3.5 w-3.5 shrink-0 text-[#555]" />
+                      ) : (
+                        <Hash className="h-3.5 w-3.5 shrink-0 text-[#555]" />
+                      )}
+                      <span className="truncate">{ch.name}</span>
+                      {!isActive && unread > 0 ? (
+                        <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-black">
+                          {unread}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setChannelMenu({ channelId: ch.id, x: rect.right, y: rect.top });
+                          }}
+                          className="ml-auto flex h-4 w-4 items-center justify-center rounded text-[#444] opacity-0 transition-opacity hover:text-white group-hover:opacity-100"
+                        >
+                          <MoreHorizontal className="h-3 w-3" />
+                        </button>
+                      )}
+                    </Link>
+                  </div>
                 );
               })}
             </div>
@@ -488,6 +523,56 @@ export function ChatSidebar({
         boxRole={box?.role}
         currentChannelId={currentChannelId}
       />
+
+      {/* Channel context menu */}
+      {channelMenu && box && (() => {
+        const ch = channels.find((c) => c.id === channelMenu.channelId);
+        if (!ch) return null;
+        return (
+          <div
+            ref={channelMenuRef}
+            className="fixed z-[100] w-[200px] rounded-[10px] border border-[#1a1a1a] bg-[#111] py-1 shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+            style={{ left: channelMenu.x, top: channelMenu.y }}
+          >
+            <button
+              onClick={() => {
+                setChannelMenu(null);
+                navigator.clipboard.writeText(`${window.location.origin}/box/${box.short_id}/c/${ch.short_id}`);
+              }}
+              className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-[#888] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <LinkIcon className="h-3.5 w-3.5" />
+              Copy link
+            </button>
+            <button
+              onClick={() => {
+                setChannelMenu(null);
+                navigator.clipboard.writeText(ch.name);
+              }}
+              className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-[#888] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <Copy className="h-3.5 w-3.5" />
+              Copy name
+            </button>
+            {ch.name !== "general" && (
+              <div className="border-t border-[#1a1a1a] py-1">
+                <button
+                  onClick={async () => {
+                    setChannelMenu(null);
+                    if (!confirm(`Leave #${ch.name}?`)) return;
+                    await fetch(`/api/channels/${ch.id}/leave`, { method: "POST" });
+                    router.push(`/box/${box.short_id}`);
+                  }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-[#de1135] transition-colors hover:bg-[#1a1a1a]"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  Leave channel
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }

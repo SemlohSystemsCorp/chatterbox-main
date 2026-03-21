@@ -221,6 +221,30 @@ export function MessageComposer({
     [newMessage, mentionStart, mentionQuery, onNewMessageChange, inputRef],
   );
 
+  /** Wrap selected text (or insert at cursor) with markdown formatting */
+  const applyFormat = useCallback(
+    (prefix: string, suffix?: string) => {
+      const textarea = inputRef.current;
+      if (!textarea) return;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selected = newMessage.slice(start, end);
+      const suf = suffix ?? prefix;
+      const replacement = selected
+        ? `${prefix}${selected}${suf}`
+        : `${prefix}${suf}`;
+      const updated = newMessage.slice(0, start) + replacement + newMessage.slice(end);
+      onNewMessageChange(updated);
+      // Place cursor inside the markers if no selection
+      requestAnimationFrame(() => {
+        textarea.focus();
+        const pos = selected ? start + replacement.length : start + prefix.length;
+        textarea.setSelectionRange(pos, pos);
+      });
+    },
+    [newMessage, onNewMessageChange, inputRef]
+  );
+
   const handleKeyDownWithMention = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       // Formatting shortcuts: Ctrl/Cmd + B/I/E
@@ -262,30 +286,6 @@ export function MessageComposer({
       onSend();
     }
   }
-
-  /** Wrap selected text (or insert at cursor) with markdown formatting */
-  const applyFormat = useCallback(
-    (prefix: string, suffix?: string) => {
-      const textarea = inputRef.current;
-      if (!textarea) return;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const selected = newMessage.slice(start, end);
-      const suf = suffix ?? prefix;
-      const replacement = selected
-        ? `${prefix}${selected}${suf}`
-        : `${prefix}${suf}`;
-      const updated = newMessage.slice(0, start) + replacement + newMessage.slice(end);
-      onNewMessageChange(updated);
-      // Place cursor inside the markers if no selection
-      requestAnimationFrame(() => {
-        textarea.focus();
-        const pos = selected ? start + replacement.length : start + prefix.length;
-        textarea.setSelectionRange(pos, pos);
-      });
-    },
-    [newMessage, onNewMessageChange, inputRef]
-  );
 
   const hasContent = newMessage.trim() || attachments.length > 0;
   const isDisabled = !hasContent || sending || newMessage.length > MAX_MESSAGE_LENGTH;

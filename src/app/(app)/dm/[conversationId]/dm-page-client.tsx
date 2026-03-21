@@ -24,7 +24,6 @@ import {
   type MessageCallbacks,
 } from "@/components/chat/message-components";
 import { createClient } from "@/lib/supabase/client";
-import { showPushNotification } from "@/lib/notifications";
 import { parseSlashCommand, executeCommand } from "@/lib/slash-commands";
 import { CreatePollModal } from "@/components/modals/create-poll-modal";
 import { MemberProfileCard } from "@/components/chat/member-profile-card";
@@ -175,6 +174,8 @@ export function DmPageClient({
     fileName?: string;
   } | null>(null);
 
+  const { displayName: contactName, setNickname: setContactNickname } = useContactNames();
+
   const otherParticipants = conversation.participants.filter(
     (p) => p.user_id !== user.id
   );
@@ -196,7 +197,6 @@ export function DmPageClient({
     user.id,
     user.fullName
   );
-  const { displayName: contactName, setNickname: setContactNickname } = useContactNames();
 
   // ── File upload ──
   const [uploading, setUploading] = useState(false);
@@ -471,16 +471,6 @@ export function DmPageClient({
           setMessages((prev) => {
             if (prev.some((m) => m.id === newMsg.id)) return prev;
             return [...prev, { ...newMsg, reactions: [], sender }];
-          });
-
-          // Desktop notification for DMs from others
-          const senderName = sender.full_name || sender.email || "Someone";
-          showPushNotification({
-            title: senderName,
-            body: newMsg.content.slice(0, 120),
-            tag: `dm-${conversation.id}`,
-            url: `/dm/${conversation.id}`,
-            avatarUrl: sender.avatar_url,
           });
 
           // Track new messages while scrolled up

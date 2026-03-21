@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { HashIcon as Hash, LockIcon as Lock, PeopleIcon as Users, DeviceMobileIcon as Phone, NoEntryIcon as PhoneOff, PinIcon as Pin, SearchIcon as Search, SparklesFillIcon as Sparkles, NoteIcon as Newspaper, ChevronDownIcon as ChevronDown, PersonAddIcon as UserPlus, SignInIcon as LogIn, SignOutIcon as LogOut, PencilIcon as Pencil, TrashIcon as Trash2, GraphIcon as BarChart3 } from "@primer/octicons-react";
+import { HashIcon as Hash, LockIcon as Lock, PeopleIcon as Users, DeviceMobileIcon as Phone, NoEntryIcon as PhoneOff, PinIcon as Pin, SearchIcon as Search, SparklesFillIcon as Sparkles, NoteIcon as Newspaper, ChevronDownIcon as ChevronDown, PersonAddIcon as UserPlus, SignInIcon as LogIn, SignOutIcon as LogOut, PencilIcon as Pencil, TrashIcon as Trash2, GraphIcon as BarChart3, GearIcon as Gear, MuteIcon as BellOff, LinkIcon, CopyIcon as Copy, InfoIcon as Info } from "@primer/octicons-react";
 import { useRouter } from "next/navigation";
 import { CreateChannelModal } from "@/components/modals/create-channel-modal";
 import { ChannelSettingsModal } from "@/components/modals/channel-settings-modal";
@@ -29,7 +29,6 @@ import {
   type MessageCallbacks,
 } from "@/components/chat/message-components";
 import { createClient } from "@/lib/supabase/client";
-import { showPushNotification } from "@/lib/notifications";
 import { parseSlashCommand, executeCommand } from "@/lib/slash-commands";
 import { MemberProfileCard } from "@/components/chat/member-profile-card";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -277,6 +276,8 @@ export function ChannelPageClient({
   const [channelMembersList, setChannelMembersList] = useState<ChannelMemberData[]>(initialChannelMembers);
   const [addToChannelOpen, setAddToChannelOpen] = useState(false);
   const [channelSettingsOpen, setChannelSettingsOpen] = useState(false);
+  const [channelDropdownOpen, setChannelDropdownOpen] = useState(false);
+  const channelDropdownRef = useRef<HTMLDivElement>(null);
   const [createPollOpen, setCreatePollOpen] = useState(false);
   const [leavingChannel, setLeavingChannel] = useState(false);
 
@@ -553,6 +554,18 @@ export function ChannelPageClient({
     return () => document.removeEventListener("keydown", handleKey);
   }, []);
 
+  // Close channel dropdown on outside click
+  useEffect(() => {
+    if (!channelDropdownOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (channelDropdownRef.current && !channelDropdownRef.current.contains(e.target as Node)) {
+        setChannelDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [channelDropdownOpen]);
+
   // ── Mark as read (throttled) ──
   const channelIdRef = useRef(channel.id);
   channelIdRef.current = channel.id;
@@ -755,16 +768,6 @@ export function ChannelPageClient({
           setMessages((prev) => {
             if (prev.some((m) => m.id === newMsg.id)) return prev;
             return [...prev, { ...newMsg, reactions: [], sender }];
-          });
-
-          // Desktop notification for messages from others
-          const senderName = sender.full_name || sender.email || "Someone";
-          showPushNotification({
-            title: `#${channel.name}`,
-            body: `${senderName}: ${newMsg.content.slice(0, 120)}`,
-            tag: `msg-${channel.id}`,
-            url: `/box/${box.short_id}/c/${channel.short_id}`,
-            avatarUrl: sender.avatar_url,
           });
 
           // Track new messages while scrolled up
@@ -1849,20 +1852,97 @@ export function ChannelPageClient({
         {/* Channel header */}
         <div className="flex h-12 shrink-0 items-center justify-between border-b border-[#1a1a1a] px-4">
           <div className="flex min-w-0 items-center gap-2">
-            <button
-              onClick={() => setChannelSettingsOpen(true)}
-              className="flex min-w-0 items-center gap-1.5 rounded-[6px] px-1.5 py-1 transition-colors hover:bg-[#1a1a1a]"
-            >
-              {channel.is_private ? (
-                <Lock className="h-4 w-4 shrink-0 text-[#555]" />
-              ) : (
-                <Hash className="h-4 w-4 shrink-0 text-[#555]" />
+            <div className="relative" ref={channelDropdownRef}>
+              <button
+                onClick={() => setChannelDropdownOpen(!channelDropdownOpen)}
+                className="flex min-w-0 items-center gap-1.5 rounded-[6px] px-1.5 py-1 transition-colors hover:bg-[#1a1a1a]"
+              >
+                {channel.is_private ? (
+                  <Lock className="h-4 w-4 shrink-0 text-[#555]" />
+                ) : (
+                  <Hash className="h-4 w-4 shrink-0 text-[#555]" />
+                )}
+                <h1 className="truncate text-[14px] font-semibold text-white">
+                  {channel.name}
+                </h1>
+                <ChevronDown className={`h-3 w-3 shrink-0 text-[#555] transition-transform ${channelDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {channelDropdownOpen && (
+                <div className="absolute left-0 top-full z-50 mt-1 w-[240px] rounded-[10px] border border-[#1a1a1a] bg-[#111] py-1 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+                  {/* Channel info header */}
+                  {channel.description && (
+                    <div className="border-b border-[#1a1a1a] px-3 py-2.5">
+                      <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#444]">
+                        {channel.is_private ? <Lock className="h-3 w-3" /> : <Hash className="h-3 w-3" />}
+                        {channel.name}
+                      </div>
+                      <p className="mt-1 text-[12px] leading-relaxed text-[#666]">{channel.description}</p>
+                    </div>
+                  )}
+
+                  {/* Quick actions */}
+                  <button
+                    onClick={() => { setChannelDropdownOpen(false); setAddToChannelOpen(true); }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-[#888] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Add people
+                  </button>
+                  <button
+                    onClick={() => { setChannelDropdownOpen(false); setSearchOpen(true); }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-[#888] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+                  >
+                    <Search className="h-4 w-4" />
+                    Search in channel
+                  </button>
+                  <button
+                    onClick={() => { setChannelDropdownOpen(false); setShowPinnedPanel(true); }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-[#888] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+                  >
+                    <Pin className="h-4 w-4" />
+                    Pinned messages
+                  </button>
+
+                  {/* Settings & admin */}
+                  <div className="border-t border-[#1a1a1a] py-1">
+                    <button
+                      onClick={() => { setChannelDropdownOpen(false); setChannelSettingsOpen(true); }}
+                      className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-[#888] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+                    >
+                      <Gear className="h-4 w-4" />
+                      Channel settings
+                    </button>
+                    {!channel.is_archived && (
+                      <button
+                        onClick={() => {
+                          setChannelDropdownOpen(false);
+                          navigator.clipboard.writeText(`${window.location.origin}/box/${box.short_id}/c/${channel.short_id}`);
+                        }}
+                        className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-[#888] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+                      >
+                        <LinkIcon className="h-4 w-4" />
+                        Copy channel link
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Leave */}
+                  {channel.name !== "general" && (
+                    <div className="border-t border-[#1a1a1a] py-1">
+                      <button
+                        onClick={() => { setChannelDropdownOpen(false); handleLeaveChannel(); }}
+                        disabled={leavingChannel}
+                        className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-[#de1135] transition-colors hover:bg-[#1a1a1a] disabled:opacity-50"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Leave channel
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
-              <h1 className="truncate text-[14px] font-semibold text-white">
-                {channel.name}
-              </h1>
-              <ChevronDown className="h-3 w-3 shrink-0 text-[#555]" />
-            </button>
+            </div>
             {channel.description && (
               <>
                 <div className="mx-1 h-4 w-px shrink-0 bg-[#222]" />
@@ -1963,7 +2043,7 @@ export function ChannelPageClient({
               >
                 <Users className="h-3.5 w-3.5" />
                 <span className="text-[11px]">
-                  {channel.is_private ? channelMembersList.length : liveMembers.length}
+                  {channelMembersList.length > 0 ? channelMembersList.length : liveMembers.length}
                 </span>
               </button>
             </Tooltip>

@@ -63,7 +63,7 @@ export default async function ChannelPage({
     getUserBoxes(supabase, user.id),
     getBoxChannels(supabase, box.id),
     getBoxMembers(box.id),
-    channel.is_private ? getChannelMembers(supabase, channel.id) : Promise.resolve([]),
+    getChannelMembers(supabase, channel.id),
     getUserConversations(supabase, user.id),
   ]);
 
