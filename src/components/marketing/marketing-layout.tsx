@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CommentDiscussionIcon as MessageSquare } from "@primer/octicons-react";
 
-export function MarketingNav() {
+export function MarketingNav({ isLoggedIn }: { isLoggedIn?: boolean }) {
   return (
     <nav className="fixed top-0 z-50 w-full border-b border-white/[0.06] bg-[#0a0a0a]/80 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
@@ -33,18 +33,29 @@ export function MarketingNav() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/login"
-            className="rounded-lg px-4 py-1.5 text-[13px] font-medium text-[#999] transition-colors hover:text-white"
-          >
-            Log in
-          </Link>
-          <Link
-            href="/signup"
-            className="rounded-lg bg-white px-4 py-1.5 text-[13px] font-medium text-black transition-colors hover:bg-[#e8e8e8]"
-          >
-            Get started
-          </Link>
+          {isLoggedIn ? (
+            <Link
+              href="/dashboard"
+              className="rounded-lg bg-white px-4 py-1.5 text-[13px] font-medium text-black transition-colors hover:bg-[#e8e8e8]"
+            >
+              Open Chatterbox
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="rounded-lg px-4 py-1.5 text-[13px] font-medium text-[#999] transition-colors hover:text-white"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/signup"
+                className="rounded-lg bg-white px-4 py-1.5 text-[13px] font-medium text-black transition-colors hover:bg-[#e8e8e8]"
+              >
+                Get started
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>

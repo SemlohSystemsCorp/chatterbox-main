@@ -283,24 +283,25 @@ function CallUI({
     // Fetch from Supabase
     import("@/lib/supabase/client").then(({ createClient }) => {
       const supabase = createClient();
-      supabase
-        .from("profiles")
-        .select("id, avatar_url")
-        .in("id", unknownIds)
-        .then(({ data }) => {
-          if (!data) return;
-          const map: Record<string, string | null> = {};
-          const participants = daily.participants();
-          for (const sid of remoteIds) {
-            const p = participants[sid];
-            const profile = data.find((d) => d.id === p?.user_id);
-            if (profile) {
-              map[sid] = profile.avatar_url;
-            }
+      Promise.resolve(
+        supabase
+          .from("profiles")
+          .select("id, avatar_url")
+          .in("id", unknownIds)
+      ).then(({ data }) => {
+        if (!data) return;
+        const map: Record<string, string | null> = {};
+        const participants = daily.participants();
+        for (const sid of remoteIds) {
+          const p = participants[sid];
+          const profile = data.find((d) => d.id === p?.user_id);
+          if (profile) {
+            map[sid] = profile.avatar_url;
           }
-          setAvatars((prev) => ({ ...prev, ...map }));
-        });
-    });
+        }
+        setAvatars((prev) => ({ ...prev, ...map }));
+      }).catch(() => {});
+    }).catch(() => {});
   }, [daily, remoteIds, avatars]);
 
   // Get participant names from daily
@@ -637,7 +638,7 @@ function CallUI({
               <Video className="h-5 w-5" />
             )}
             <span className="absolute -bottom-5 text-[10px] text-[#555] opacity-0 transition-opacity group-hover:opacity-100">
-              {isVideoOff ? "Camera" : "Camera"}
+              {isVideoOff ? "Turn on" : "Turn off"}
             </span>
           </button>
         </Tooltip>

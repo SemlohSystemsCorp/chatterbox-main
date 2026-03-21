@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { box_id, messages: conversationMessages, mode } = await request.json();
+  const { box_id, messages: conversationMessages, mode, chat_id, user_content } = await request.json();
 
   const isGeneral = mode === "general";
 
@@ -155,6 +155,26 @@ Be concise and helpful. Reference specific messages, channels, or people when re
 
   const content =
     response.content[0].type === "text" ? response.content[0].text : "";
+
+  // Persist messages to database if a chat_id is provided
+  if (chat_id && user_content) {
+    const now = new Date().toISOString();
+    await supabase.from("sherlock_messages").insert([
+      { chat_id, role: "user", content: user_content },
+      { chat_id, role: "assistant", content },
+    ]);
+    // Update chat title from first user message, and bump updated_at
+    const { count: msgCount } = await supabase
+      .from("sherlock_messages")
+      .select("*", { count: "exact", head: true })
+      .eq("chat_id", chat_id);
+    const updates: Record<string, string> = { updated_at: now };
+    // If this is the first exchange (2 messages: user + assistant), set the title
+    if (msgCount === 2) {
+      updates.title = user_content.slice(0, 80);
+    }
+    await supabase.from("sherlock_chats").update(updates).eq("id", chat_id);
+  }
 
   return NextResponse.json({ content });
 }

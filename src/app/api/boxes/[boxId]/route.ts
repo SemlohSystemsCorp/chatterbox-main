@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function PATCH(
@@ -102,7 +103,8 @@ export async function DELETE(
     );
   }
 
-  const { error } = await supabase.from("boxes").delete().eq("id", boxId);
+  // Use admin client to bypass RLS — ownership already verified above
+  const { error } = await supabaseAdmin.from("boxes").delete().eq("id", boxId);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

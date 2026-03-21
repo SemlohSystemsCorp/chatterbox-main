@@ -1,27 +1,26 @@
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
 
-async function processScheduledMessages(request: NextRequest) {
-  // Verify cron secret to prevent unauthorized calls
-  const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+const admin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-  const admin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
-  // Find all pending messages that are due
-  const { data: dueMessages, error: fetchError } = await admin
+async function sendDueMessages(filterSenderId?: string) {
+  const query = admin
     .from("scheduled_messages")
     .select("*")
     .eq("status", "pending")
     .lte("scheduled_for", new Date().toISOString())
     .order("scheduled_for", { ascending: true })
     .limit(50);
+
+  if (filterSenderId) {
+    query.eq("sender_id", filterSenderId);
+  }
+
+  const { data: dueMessages, error: fetchError } = await query;
 
   if (fetchError) {
     return NextResponse.json({ error: fetchError.message }, { status: 500 });
@@ -95,11 +94,27 @@ async function processScheduledMessages(request: NextRequest) {
   return NextResponse.json({ sent: sentCount });
 }
 
-// Vercel Cron sends GET requests
+// GET: Vercel Cron (requires CRON_SECRET)
 export async function GET(request: NextRequest) {
-  return processScheduledMessages(request);
+  const authHeader = request.headers.get("authorization");
+  const cronSecret = process.env.CRON_SECRET;
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  return sendDueMessages();
 }
 
-export async function POST(request: NextRequest) {
-  return processScheduledMessages(request);
+// POST: Client-side watcher (requires authenticated user, scoped to their messages)
+export async function POST() {
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  return sendDueMessages(user.id);
 }

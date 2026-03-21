@@ -373,11 +373,25 @@ export function BoxSettingsClient({
     }
   }
 
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   async function handleDeleteBox() {
     if (deleteConfirm !== box.name) return;
-    const res = await fetch(`/api/boxes/${box.id}`, { method: "DELETE" });
-    if (res.ok) {
-      router.push("/dashboard");
+    setDeleteLoading(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/boxes/${box.id}`, { method: "DELETE" });
+      if (res.ok) {
+        router.push("/dashboard");
+      } else {
+        const data = await res.json();
+        setDeleteError(data.error || "Failed to delete workspace");
+      }
+    } catch {
+      setDeleteError("Something went wrong. Please try again.");
+    } finally {
+      setDeleteLoading(false);
     }
   }
 
@@ -961,11 +975,14 @@ export function BoxSettingsClient({
                     />
                     <button
                       onClick={handleDeleteBox}
-                      disabled={deleteConfirm !== box.name}
+                      disabled={deleteConfirm !== box.name || deleteLoading}
                       className="h-9 rounded-[8px] bg-[#de1135] px-5 text-[13px] font-semibold text-white transition-colors hover:bg-[#ff2244] disabled:cursor-not-allowed disabled:opacity-30"
                     >
-                      Delete Box forever
+                      {deleteLoading ? "Deleting..." : "Delete Box forever"}
                     </button>
+                    {deleteError && (
+                      <p className="mt-2 text-[13px] text-[#de1135]">{deleteError}</p>
+                    )}
                   </div>
                 </div>
               </>

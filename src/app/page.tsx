@@ -8,6 +8,7 @@ import {
   MarketingNav,
   MarketingFooter,
 } from "@/components/marketing/marketing-layout";
+import { createClient } from "@/lib/supabase/client";
 import { isTauri } from "@/lib/tauri";
 import HomeDesktop from "./home-desktop";
 
@@ -91,6 +92,13 @@ export default function HomePage() {
   const [platform, setPlatform] = useState<"mac" | "windows" | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState(DOWNLOAD_URLS.releases);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    createClient().auth.getUser().then(({ data: { user } }) => {
+      if (user) setIsLoggedIn(true);
+    });
+  }, []);
 
   useEffect(() => {
     const ua = navigator.userAgent;
@@ -127,7 +135,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <MarketingNav />
+      <MarketingNav isLoggedIn={isLoggedIn} />
 
       {/* ── Desktop Download Banner ── */}
       {platform && !bannerDismissed && (
@@ -183,13 +191,23 @@ export default function HomePage() {
               that saves you hours every week.
             </p>
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <Link
-                href="/signup"
-                className="group inline-flex h-11 items-center gap-2 rounded-xl bg-white px-6 text-[14px] font-semibold text-black transition-all hover:bg-[#e8e8e8]"
-              >
-                Start for free
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </Link>
+              {isLoggedIn ? (
+                <Link
+                  href="/dashboard"
+                  className="group inline-flex h-11 items-center gap-2 rounded-xl bg-white px-6 text-[14px] font-semibold text-black transition-all hover:bg-[#e8e8e8]"
+                >
+                  Open Chatterbox
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              ) : (
+                <Link
+                  href="/signup"
+                  className="group inline-flex h-11 items-center gap-2 rounded-xl bg-white px-6 text-[14px] font-semibold text-black transition-all hover:bg-[#e8e8e8]"
+                >
+                  Start for free
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              )}
               <a
                 href="#features"
                 className="inline-flex h-11 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-6 text-[14px] font-medium text-[#ccc] transition-all hover:border-white/[0.12] hover:bg-white/[0.06]"
@@ -613,10 +631,10 @@ export default function HomePage() {
                 ))}
               </ul>
               <Link
-                href="/signup"
+                href={isLoggedIn ? "/dashboard" : "/signup"}
                 className="flex h-10 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] text-[13px] font-medium text-[#ccc] transition-all hover:border-white/[0.12] hover:bg-white/[0.06]"
               >
-                Get started
+                {isLoggedIn ? "Open Chatterbox" : "Get started"}
               </Link>
             </div>
 
@@ -651,10 +669,10 @@ export default function HomePage() {
                 ))}
               </ul>
               <Link
-                href="/signup"
+                href={isLoggedIn ? "/dashboard" : "/signup"}
                 className="group flex h-10 items-center justify-center gap-1.5 rounded-xl bg-white text-[13px] font-semibold text-black transition-all hover:bg-[#e8e8e8]"
               >
-                Start free trial
+                {isLoggedIn ? "Open Chatterbox" : "Start free trial"}
                 <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </Link>
             </div>
@@ -708,19 +726,31 @@ export default function HomePage() {
               under a minute.
             </p>
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <Link
-                href="/signup"
-                className="group inline-flex h-11 items-center gap-2 rounded-xl bg-white px-6 text-[14px] font-semibold text-black transition-all hover:bg-[#e8e8e8]"
-              >
-                Get started for free
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex h-11 items-center rounded-xl border border-white/[0.08] bg-white/[0.03] px-6 text-[14px] font-medium text-[#ccc] transition-all hover:border-white/[0.12] hover:bg-white/[0.06]"
-              >
-                Log in
-              </Link>
+              {isLoggedIn ? (
+                <Link
+                  href="/dashboard"
+                  className="group inline-flex h-11 items-center gap-2 rounded-xl bg-white px-6 text-[14px] font-semibold text-black transition-all hover:bg-[#e8e8e8]"
+                >
+                  Open Chatterbox
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/signup"
+                    className="group inline-flex h-11 items-center gap-2 rounded-xl bg-white px-6 text-[14px] font-semibold text-black transition-all hover:bg-[#e8e8e8]"
+                  >
+                    Get started for free
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="inline-flex h-11 items-center rounded-xl border border-white/[0.08] bg-white/[0.03] px-6 text-[14px] font-medium text-[#ccc] transition-all hover:border-white/[0.12] hover:bg-white/[0.06]"
+                  >
+                    Log in
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

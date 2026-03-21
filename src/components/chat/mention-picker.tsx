@@ -4,6 +4,18 @@ import { useState, useEffect, useRef } from "react";
 import { PersonIcon as User, HashIcon as Hash, PeopleIcon as Users, LockIcon as Lock } from "@primer/octicons-react";
 import type { MemberData, SidebarChannel } from "@/lib/chat-helpers";
 
+export interface SpecialMention {
+  handle: "all" | "here" | "channel";
+  label: string;
+  description: string;
+}
+
+export const SPECIAL_MENTIONS: SpecialMention[] = [
+  { handle: "all", label: "@all", description: "Notify everyone in this channel" },
+  { handle: "here", label: "@here", description: "Notify online members" },
+  { handle: "channel", label: "@channel", description: "Notify everyone in this channel" },
+];
+
 export interface MentionItem {
   type: "user" | "channel";
   id: string;
@@ -21,6 +33,7 @@ interface MentionPickerProps {
   query: string;
   onSelectMember: (member: MemberData) => void;
   onSelectChannel: (channel: SidebarChannel) => void;
+  onSelectSpecial?: (mention: SpecialMention) => void;
   onClose: () => void;
 }
 
@@ -80,6 +93,7 @@ export function MentionPicker({
   query,
   onSelectMember,
   onSelectChannel,
+  onSelectSpecial,
   onClose,
 }: MentionPickerProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -87,34 +101,47 @@ export function MentionPicker({
 
   const items = buildItems(members, channels, query);
 
+  // Filter special mentions by query
+  const q = query.toLowerCase();
+  const specialItems = SPECIAL_MENTIONS.filter(
+    (s) => s.handle.includes(q) || s.label.includes(q)
+  );
+
   // Group items by type for section headers
   const userItems = items.filter((i) => i.type === "user");
   const channelItems = items.filter((i) => i.type === "channel");
 
-  // Flat list for keyboard navigation
+  // Flat list for keyboard navigation: specials first, then users, then channels
+  const totalSpecial = specialItems.length;
   const flatItems = [...userItems, ...channelItems];
 
   useEffect(() => {
     setSelectedIndex(0);
   }, [query]);
 
+  const totalItems = totalSpecial + flatItems.length;
+
   useEffect(() => {
-    if (flatItems.length === 0) return;
+    if (totalItems === 0) return;
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        setSelectedIndex((i) => Math.min(i + 1, flatItems.length - 1));
+        setSelectedIndex((i) => Math.min(i + 1, totalItems - 1));
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setSelectedIndex((i) => Math.max(i - 1, 0));
       } else if (e.key === "Enter" || e.key === "Tab") {
         e.preventDefault();
-        const item = flatItems[selectedIndex];
-        if (item?.type === "user") {
-          onSelectMember(item.raw as MemberData);
-        } else if (item?.type === "channel") {
-          onSelectChannel(item.raw as SidebarChannel);
+        if (selectedIndex < totalSpecial) {
+          onSelectSpecial?.(specialItems[selectedIndex]);
+        } else {
+          const item = flatItems[selectedIndex - totalSpecial];
+          if (item?.type === "user") {
+            onSelectMember(item.raw as MemberData);
+          } else if (item?.type === "channel") {
+            onSelectChannel(item.raw as SidebarChannel);
+          }
         }
       } else if (e.key === "Escape") {
         e.preventDefault();
@@ -124,7 +151,7 @@ export function MentionPicker({
 
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
-  }, [flatItems, selectedIndex, onSelectMember, onSelectChannel, onClose]);
+  }, [flatItems, specialItems, totalSpecial, totalItems, selectedIndex, onSelectMember, onSelectChannel, onSelectSpecial, onClose]);
 
   // Scroll selected item into view
   useEffect(() => {
@@ -133,11 +160,8 @@ export function MentionPicker({
     el?.scrollIntoView({ block: "nearest" });
   }, [selectedIndex]);
 
-  // Show hint categories when query is empty
-  if (query === "" && flatItems.length === 0) return null;
-
-  // No results
-  if (flatItems.length === 0) return null;
+  // No results at all
+  if (totalItems === 0) return null;
 
   let globalIndex = 0;
 
@@ -146,9 +170,55 @@ export function MentionPicker({
       className="absolute bottom-full left-0 z-50 mb-1 max-h-[280px] w-[280px] overflow-auto rounded-[8px] border border-[#2a2a2a] bg-[#111] py-1 shadow-xl"
       ref={listRef}
     >
+      {/* Special mentions section */}
+      {specialItems.length > 0 && (
+        <>
+          <div className="flex items-center gap-1.5 px-3 py-1.5">
+            <Users className="h-3 w-3 text-[#555]" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#555]">
+              Special
+            </span>
+          </div>
+          {specialItems.map((item) => {
+            const idx = globalIndex++;
+            return (
+              <button
+                key={item.handle}
+                data-mention-item
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onSelectSpecial?.(item);
+                }}
+                onMouseEnter={() => setSelectedIndex(idx)}
+                className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] ${
+                  idx === selectedIndex
+                    ? "bg-[#1a1a1a] text-white"
+                    : "text-[#999] hover:bg-[#1a1a1a]"
+                }`}
+              >
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#2a1f00] text-[10px] font-bold text-[#d4a843]">
+                  @
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-medium text-[#d4a843]">
+                    {item.label}
+                  </div>
+                  <div className="truncate text-[11px] text-[#555]">
+                    {item.description}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </>
+      )}
+
       {/* Users section */}
       {userItems.length > 0 && (
         <>
+          {specialItems.length > 0 && (
+            <div className="mx-3 my-1 border-t border-[#1a1a1a]" />
+          )}
           <div className="flex items-center gap-1.5 px-3 py-1.5">
             <User className="h-3 w-3 text-[#555]" />
             <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#555]">
@@ -200,7 +270,7 @@ export function MentionPicker({
       {/* Channels section */}
       {channelItems.length > 0 && (
         <>
-          {userItems.length > 0 && (
+          {(userItems.length > 0 || specialItems.length > 0) && (
             <div className="mx-3 my-1 border-t border-[#1a1a1a]" />
           )}
           <div className="flex items-center gap-1.5 px-3 py-1.5">

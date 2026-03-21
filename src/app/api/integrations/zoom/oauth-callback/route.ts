@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Upsert workspace integration (handles reconnection)
-    await supabase.from("workspace_integrations").upsert(
+    const { error: upsertError } = await supabase.from("workspace_integrations").upsert(
       {
         workspace_id: state,
         integration_id: integration.id,
@@ -81,6 +81,13 @@ export async function GET(request: NextRequest) {
       },
       { onConflict: "workspace_id,integration_id" }
     );
+
+    if (upsertError) {
+      console.error("Zoom integration upsert failed:", upsertError);
+      return NextResponse.redirect(
+        `${appUrl}/box/${boxShortId}/integrations/zoom?error=zoom_save_failed`
+      );
+    }
 
     // Log the event
     await supabase.from("integration_events").insert({

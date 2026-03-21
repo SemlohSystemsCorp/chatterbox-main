@@ -93,17 +93,23 @@ const components: Components = {
   ),
 };
 
+const SPECIAL_HANDLES = new Set(["all", "here", "channel"]);
+
 export function Markdown({ children, className, mentionNames }: MarkdownProps) {
   // Replace <@handle> with styled inline HTML before markdown parsing
-  const processed = mentionNames
-    ? children.replace(/<@([a-zA-Z0-9._-]+)>/g, (_, handle: string) => {
-        const name = mentionNames[handle];
-        return `<span class="mention-tag">@${name || handle}</span>`;
-      })
-    : children;
+  const processed = (mentionNames ? children : children).replace(
+    /<@([a-zA-Z0-9._-]+)>/g,
+    (_, handle: string) => {
+      if (SPECIAL_HANDLES.has(handle)) {
+        return `<span class="mention-tag mention-special">@${handle}</span>`;
+      }
+      const name = mentionNames?.[handle];
+      return `<span class="mention-tag">@${name || handle}</span>`;
+    }
+  );
 
   return (
-    <div className={`overflow-hidden break-words ${className ?? ""} [&_.mention-tag]:rounded-[3px] [&_.mention-tag]:bg-[#276ef1]/15 [&_.mention-tag]:px-[3px] [&_.mention-tag]:py-[1px] [&_.mention-tag]:font-semibold [&_.mention-tag]:text-[#5b9bf5]`}>
+    <div className={`overflow-hidden break-words ${className ?? ""} [&_.mention-tag]:rounded-[3px] [&_.mention-tag]:bg-[#276ef1]/15 [&_.mention-tag]:px-[3px] [&_.mention-tag]:py-[1px] [&_.mention-tag]:font-semibold [&_.mention-tag]:text-[#5b9bf5] [&_.mention-special]:bg-[#d4a843]/15 [&_.mention-special]:text-[#d4a843]`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}

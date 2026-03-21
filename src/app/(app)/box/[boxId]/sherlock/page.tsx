@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getAuthUser, getUserBoxes, getBoxByShortId, getBoxChannels, getBoxMembers } from "@/lib/data";
+import { getAuthUser, getUserBoxes, getBoxByShortId, getBoxChannels, getBoxMembers, getUserConversations } from "@/lib/data";
 import { redirect } from "next/navigation";
 import { SherlockClient } from "./sherlock-client";
 
@@ -29,11 +29,32 @@ export default async function SherlockPage({
     redirect("/dashboard");
   }
 
-  const [boxes, channels, members] = await Promise.all([
+  const [boxes, channels, members, conversations] = await Promise.all([
     getUserBoxes(supabase, user.id),
     getBoxChannels(supabase, box.id),
     getBoxMembers(box.id),
+    getUserConversations(supabase, user.id),
   ]);
+
+  // Fetch active calls for the sidebar
+  const channelIds = channels.map((c) => c.id);
+  const { data: allBoxCalls } = channelIds.length > 0
+    ? await supabase
+        .from("calls")
+        .select("id, channel_id, conversation_id, started_by, started_at")
+        .in("channel_id", channelIds)
+        .is("ended_at", null)
+    : { data: [] };
+
+  const activeCalls = (allBoxCalls ?? []).map((c) => {
+    const ch = channels.find((ch) => ch.id === c.channel_id);
+    const member = members.find((m) => m.user_id === c.started_by);
+    return {
+      ...c,
+      channel_name: ch?.name,
+      starter_name: member?.full_name || member?.email,
+    };
+  });
 
   return (
     <SherlockClient
@@ -42,6 +63,8 @@ export default async function SherlockPage({
       box={box}
       channels={channels}
       members={members}
+      conversations={conversations}
+      activeCalls={activeCalls}
     />
   );
 }
