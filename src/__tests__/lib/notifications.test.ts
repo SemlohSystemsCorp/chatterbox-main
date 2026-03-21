@@ -16,12 +16,14 @@ import { isDndActive } from "@/lib/notifications";
 
 function makeSettings(overrides: Record<string, unknown> = {}) {
   return {
-    mute_all_sounds: false,
-    notification_schedule_enabled: false,
-    notification_schedule_days: "mon,tue,wed,thu,fri",
-    notification_schedule_start: "09:00",
-    notification_schedule_end: "17:00",
-    ...overrides,
+    settings: {
+      mute_all_sounds: false,
+      notification_schedule_enabled: false,
+      notification_schedule_days: "mon,tue,wed,thu,fri",
+      notification_schedule_start: "09:00",
+      notification_schedule_end: "17:00",
+      ...overrides,
+    },
   };
 }
 

@@ -9,6 +9,7 @@
     "beforeBuildCommand": "npm run build:standalone"
   },
   "app": {
+    "macOSPrivateApi": true,
     "windows": [
       {
         "title": "Chatterbox",
@@ -17,7 +18,12 @@
         "minWidth": 800,
         "minHeight": 600,
         "decorations": true,
-        "center": true
+        "transparent": true,
+        "center": true,
+        "windowEffects": {
+          "effects": ["underWindowBackground"],
+          "state": "followsWindowActiveState"
+        }
       }
     ],
     "security": {
@@ -40,6 +46,8 @@
     "targets": "all",
     "macOS": {
       "minimumSystemVersion": "10.15",
+      "entitlements": "Entitlements.plist",
+      "signingIdentity": "-",
       "dmg": {
         "appPosition": { "x": 180, "y": 170 },
         "applicationFolderPosition": { "x": 480, "y": 170 },

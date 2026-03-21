@@ -7,7 +7,7 @@ export function MarketingNav({ isLoggedIn }: { isLoggedIn?: boolean }) {
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white">
+            <div className="logo-glass flex h-7 w-7 items-center justify-center rounded-lg bg-white">
               <MessageSquare className="h-3.5 w-3.5 text-black" />
             </div>
             <span className="text-[16px] font-bold tracking-[-0.01em] text-white">
@@ -17,6 +17,7 @@ export function MarketingNav({ isLoggedIn }: { isLoggedIn?: boolean }) {
 
           <div className="hidden items-center gap-1 lg:flex">
             {[
+              { label: "Download", href: "/download" },
               { label: "Pricing", href: "/pricing" },
               { label: "Why Chatterbox?", href: "/why-chatterbox" },
               { label: "About", href: "/about" },
@@ -69,7 +70,7 @@ export function MarketingFooter() {
         <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="mb-3 flex items-center gap-2.5">
-              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-white">
+              <div className="logo-glass flex h-6 w-6 items-center justify-center rounded-md bg-white">
                 <MessageSquare className="h-3 w-3 text-black" />
               </div>
               <span className="text-[15px] font-bold text-white">
@@ -87,6 +88,7 @@ export function MarketingFooter() {
                 title: "Product",
                 links: [
                   { label: "Features", href: "/#features" },
+                  { label: "Download", href: "/download" },
                   { label: "Pricing", href: "/pricing" },
                   { label: "Security", href: "/#security" },
                 ],
