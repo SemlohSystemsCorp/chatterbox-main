@@ -20,6 +20,27 @@ import {
   KeyIcon as Keyboard,
 } from "@primer/octicons-react";
 
+function fuzzyMatch(query: string, target: string): number | null {
+  const q = query.toLowerCase();
+  const t = target.toLowerCase();
+  let qi = 0;
+  let score = 0;
+  let lastMatchIndex = -1;
+
+  for (let ti = 0; ti < t.length && qi < q.length; ti++) {
+    if (t[ti] === q[qi]) {
+      score += ti - lastMatchIndex - 1; // penalize gaps
+      if (ti === 0 || t[ti - 1] === ' ' || t[ti - 1] === '-' || t[ti - 1] === '\u2014') {
+        score -= 5; // bonus for matching at word boundary
+      }
+      lastMatchIndex = ti;
+      qi++;
+    }
+  }
+
+  return qi === q.length ? score : null; // null means no match
+}
+
 interface CommandItem {
   id: string;
   label: string;
@@ -173,13 +194,18 @@ export function CommandPalette({ boxes, activeBoxId, onOpenSearch }: CommandPale
     section: "Actions",
   });
 
-  // Filter commands
+  // Filter commands with fuzzy matching
   const filtered = query.trim()
-    ? commands.filter(
-        (c) =>
-          c.label.toLowerCase().includes(query.toLowerCase()) ||
-          (c.description?.toLowerCase().includes(query.toLowerCase()))
-      )
+    ? commands
+        .map((c) => {
+          const labelScore = fuzzyMatch(query, c.label);
+          const descScore = c.description ? fuzzyMatch(query, c.description) : null;
+          const score = labelScore !== null ? labelScore : descScore;
+          return { cmd: c, score };
+        })
+        .filter((r) => r.score !== null)
+        .sort((a, b) => a.score! - b.score!)
+        .map((r) => r.cmd)
     : commands;
 
   // Group by section

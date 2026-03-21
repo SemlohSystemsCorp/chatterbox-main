@@ -165,6 +165,11 @@ export default function PricingPage() {
                       {plan.period}
                     </span>
                   )}
+                  {plan.name === "Pro" && (
+                    <p className="mt-2 text-[12px] leading-[18px] text-[#555]">
+                      or $6.67/month billed annually (2 months free)
+                    </p>
+                  )}
                 </div>
                 <Link
                   href={plan.ctaHref}

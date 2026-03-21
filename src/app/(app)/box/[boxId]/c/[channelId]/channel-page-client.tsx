@@ -3,15 +3,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { HashIcon as Hash, LockIcon as Lock, PeopleIcon as Users, DeviceMobileIcon as Phone, NoEntryIcon as PhoneOff, PinIcon as Pin, SearchIcon as Search, SparklesFillIcon as Sparkles, NoteIcon as Newspaper, ChevronDownIcon as ChevronDown, PersonAddIcon as UserPlus, SignInIcon as LogIn, SignOutIcon as LogOut, PencilIcon as Pencil, TrashIcon as Trash2, GraphIcon as BarChart3, GearIcon as Gear, MuteIcon as BellOff, LinkIcon, CopyIcon as Copy, InfoIcon as Info } from "@primer/octicons-react";
 import { useRouter } from "next/navigation";
-import { CreateChannelModal } from "@/components/modals/create-channel-modal";
-import { ChannelSettingsModal } from "@/components/modals/channel-settings-modal";
-import { CreatePollModal } from "@/components/modals/create-poll-modal";
-import { InviteModal } from "@/components/modals/invite-modal";
-import { AddToChannelModal } from "@/components/modals/add-to-channel-modal";
-import { SearchModal } from "@/components/modals/search-modal";
-import { SummaryModal } from "@/components/modals/summary-modal";
-import { DigestModal } from "@/components/modals/digest-modal";
-import { GroupDmModal } from "@/components/modals/group-dm-modal";
+import dynamic from "next/dynamic";
 import { HighlightsPanel } from "@/components/chat/highlights-panel";
 import { useScheduledMessageWatcher } from "@/hooks/use-scheduled-message-watcher";
 import { PinnedMessagesPanel } from "@/components/chat/pinned-messages-panel";
@@ -23,11 +15,12 @@ import {
   MessageReactions,
   HoverActions,
   EditBox,
-  ThreadReplies,
+  ThreadIndicator,
   SystemMessage,
   parseSystemMessage,
   type MessageCallbacks,
 } from "@/components/chat/message-components";
+import { ThreadPanel } from "@/components/chat/thread-panel";
 import { createClient } from "@/lib/supabase/client";
 import { parseSlashCommand, executeCommand } from "@/lib/slash-commands";
 import { MemberProfileCard } from "@/components/chat/member-profile-card";
@@ -37,10 +30,20 @@ import { usePresence } from "@/hooks/use-presence";
 import { useTyping } from "@/hooks/use-typing";
 import { useContactNames } from "@/hooks/use-contact-names";
 import { useDraft } from "@/hooks/use-draft";
-import {
-  MediaPreviewModal,
-  type MediaType,
-} from "@/components/modals/media-preview-modal";
+import type { MediaType } from "@/components/modals/media-preview-modal";
+
+// ── Lazy-loaded modals (only fetched when opened) ──
+const CreateChannelModal = dynamic(() => import("@/components/modals/create-channel-modal").then(m => ({ default: m.CreateChannelModal })), { ssr: false });
+const ChannelSettingsModal = dynamic(() => import("@/components/modals/channel-settings-modal").then(m => ({ default: m.ChannelSettingsModal })), { ssr: false });
+const CreatePollModal = dynamic(() => import("@/components/modals/create-poll-modal").then(m => ({ default: m.CreatePollModal })), { ssr: false });
+const InviteModal = dynamic(() => import("@/components/modals/invite-modal").then(m => ({ default: m.InviteModal })), { ssr: false });
+const AddToChannelModal = dynamic(() => import("@/components/modals/add-to-channel-modal").then(m => ({ default: m.AddToChannelModal })), { ssr: false });
+const SearchModal = dynamic(() => import("@/components/modals/search-modal").then(m => ({ default: m.SearchModal })), { ssr: false });
+const SummaryModal = dynamic(() => import("@/components/modals/summary-modal").then(m => ({ default: m.SummaryModal })), { ssr: false });
+const DigestModal = dynamic(() => import("@/components/modals/digest-modal").then(m => ({ default: m.DigestModal })), { ssr: false });
+const GroupDmModal = dynamic(() => import("@/components/modals/group-dm-modal").then(m => ({ default: m.GroupDmModal })), { ssr: false });
+const ConfirmModal = dynamic(() => import("@/components/ui/confirm-modal").then(m => ({ default: m.ConfirmModal })), { ssr: false });
+const MediaPreviewModal = dynamic(() => import("@/components/modals/media-preview-modal").then(m => ({ default: m.MediaPreviewModal })), { ssr: false });
 import {
   formatTime,
   formatDate,
@@ -266,6 +269,18 @@ export function ChannelPageClient({
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(initialMessages.length >= 50);
   const [newMsgCount, setNewMsgCount] = useState(0);
+  const [toast, setToast] = useState<{ message: string; type: "error" | "success" | "info" } | null>(null);
+  const [lastReadAt] = useState<string | null>(() => {
+    const own = initialReadCursors.find((c) => c.user_id === user.id);
+    return own?.last_read_at ?? null;
+  });
+  const newDividerShown = useRef(false);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -280,27 +295,12 @@ export function ChannelPageClient({
   const channelDropdownRef = useRef<HTMLDivElement>(null);
   const [createPollOpen, setCreatePollOpen] = useState(false);
   const [leavingChannel, setLeavingChannel] = useState(false);
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
 
   const isBoxAdmin = box.role === "owner" || box.role === "admin";
 
-  async function handleLeaveChannel() {
-    if (!confirm(`Leave #${channel.name}? You'll need to be re-invited to rejoin.`)) return;
-    setLeavingChannel(true);
-    try {
-      const res = await fetch(
-        `/api/channels/${channel.id}/members?user_id=${user.id}`,
-        { method: "DELETE" }
-      );
-      if (res.ok) {
-        router.push(`/box/${box.short_id}`);
-        router.refresh();
-      } else {
-        const data = await res.json();
-        alert(data.error || "Failed to leave channel");
-      }
-    } finally {
-      setLeavingChannel(false);
-    }
+  function handleLeaveChannel() {
+    setLeaveConfirmOpen(true);
   }
 
   // Modals
@@ -319,6 +319,9 @@ export function ChannelPageClient({
 
   // Reply
   const [replyingTo, setReplyingTo] = useState<MessageData | null>(null);
+
+  // Thread panel
+  const [threadParent, setThreadParent] = useState<MessageData | null>(null);
 
   // Media preview
   const [mediaPreview, setMediaPreview] = useState<{
@@ -1311,6 +1314,7 @@ export function ChannelPageClient({
                 .single();
               if (error) {
                 setMessages((prev) => prev.filter((m) => m.id !== tempId));
+                setToast({ message: "Failed to send message. Please try again.", type: "error" });
               }
             }
           } finally {
@@ -1380,6 +1384,7 @@ export function ChannelPageClient({
             setMessages((prev) => prev.filter((m) => m.id !== tempId));
             setNewMessage(savedMessage);
             setReplyingTo(replyMsg);
+            setToast({ message: "Failed to send message. Please try again.", type: "error" });
           } else if (inserted) {
             sendMessageNotifications(inserted.id, fullContent, replyMsg, liveMembers, user, channel, box);
           }
@@ -1448,6 +1453,7 @@ export function ChannelPageClient({
       setAttachments(sentAttachments);
       setNewMessage(savedMessage); // Restore typed message
       setReplyingTo(replyMsg);
+      setToast({ message: "Failed to send message. Please try again.", type: "error" });
     } else if (inserted) {
       if (sentAttachments.length > 0) {
         await supabase.from("attachments").insert(
@@ -1555,6 +1561,7 @@ export function ChannelPageClient({
           m.id === msgId ? original : m
         )
       );
+      setToast({ message: "Failed to save edit. Please try again.", type: "error" });
     } else {
       // Insert channel event for edit
       await supabase.from("channel_events").insert({
@@ -1590,11 +1597,33 @@ export function ChannelPageClient({
       })
     );
 
-    await fetch("/api/messages/react", {
+    const res = await fetch("/api/messages/react", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message_id: messageId, emoji }),
     });
+
+    if (!res.ok) {
+      // Rollback optimistic reaction update
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== messageId) return m;
+          if (existing) {
+            return {
+              ...m,
+              reactions: [...m.reactions, { emoji, user_id: user.id }],
+            };
+          }
+          return {
+            ...m,
+            reactions: m.reactions.filter(
+              (r) => !(r.emoji === emoji && r.user_id === user.id)
+            ),
+          };
+        })
+      );
+      setToast({ message: "Failed to update reaction. Please try again.", type: "error" });
+    }
   }
 
   // ── Delete message ──
@@ -1632,6 +1661,17 @@ export function ChannelPageClient({
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+    // Up arrow in empty composer → edit last own message
+    if (e.key === "ArrowUp" && !newMessage.trim()) {
+      const lastOwn = [...messages].reverse().find(
+        (m) => m.sender_id === user.id && !m.parent_message_id
+      );
+      if (lastOwn) {
+        e.preventDefault();
+        setEditingId(lastOwn.id);
+        setEditContent(lastOwn.content);
+      }
     }
   }
 
@@ -1807,6 +1847,7 @@ export function ChannelPageClient({
     onUnpin: handleUnpin,
     boxShortId: box.short_id,
     contactName,
+    onOpenThread: (msg) => setThreadParent(msg),
   };
 
   return (
@@ -1931,7 +1972,7 @@ export function ChannelPageClient({
                   {channel.name !== "general" && (
                     <div className="border-t border-[#1a1a1a] py-1">
                       <button
-                        onClick={() => { setChannelDropdownOpen(false); handleLeaveChannel(); }}
+                        onClick={() => { setChannelDropdownOpen(false); setLeaveConfirmOpen(true); }}
                         disabled={leavingChannel}
                         className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-[#de1135] transition-colors hover:bg-[#1a1a1a] disabled:opacity-50"
                       >
@@ -2082,6 +2123,19 @@ export function ChannelPageClient({
           />
         )}
 
+        {/* Pinned message banner */}
+        {!showPinnedPanel && pinnedMessageIds.size > 0 && (
+          <button
+            onClick={() => setShowPinnedPanel(true)}
+            className="flex w-full items-center gap-2 border-b border-[#1a1a1a] bg-[#0d0d0d] px-4 py-2 text-left transition-colors hover:bg-[#111]"
+          >
+            <Pin className="h-3.5 w-3.5 shrink-0 text-[#f59e0b]" />
+            <span className="text-[12px] text-[#888]">
+              {pinnedMessageIds.size} pinned message{pinnedMessageIds.size !== 1 ? "s" : ""}
+            </span>
+          </button>
+        )}
+
         {/* Active call banner */}
         {liveActiveCall && (
           <button
@@ -2151,6 +2205,8 @@ export function ChannelPageClient({
                 </button>
               </div>
             ) : (
+              // Reset new message divider tracking for this render
+              newDividerShown.current = false,
               timeline.map((item, i) => {
                 // ── Channel events (centered text) ──
                 if (item.kind === "event") {
@@ -2285,6 +2341,26 @@ export function ChannelPageClient({
                       </div>
                     )}
 
+                    {/* New messages divider */}
+                    {(() => {
+                      if (newDividerShown.current) return null;
+                      if (!lastReadAt) return null;
+                      if (msg.sender_id === user.id) return null;
+                      const msgTime = new Date(msg.created_at).getTime();
+                      const readTime = new Date(lastReadAt).getTime();
+                      if (msgTime <= readTime) return null;
+                      newDividerShown.current = true;
+                      return (
+                        <div className="my-3 flex items-center gap-3">
+                          <div className="flex-1 border-t border-[#de1135]" />
+                          <span className="text-[11px] font-semibold text-[#de1135]">
+                            New
+                          </span>
+                          <div className="flex-1 border-t border-[#de1135]" />
+                        </div>
+                      );
+                    })()}
+
                     <div
                       className={`group relative rounded-[4px] transition-colors ${
                         grouped ? "mt-0" : "mt-4"
@@ -2346,8 +2422,8 @@ export function ChannelPageClient({
                       <MessageReactions msg={msg} paddingLeft="pl-[56px]" cb={msgCallbacks} />
                     </div>
 
-                    {/* Nested replies */}
-                    <ThreadReplies parentId={msg.id} depth={1} childrenMap={childrenMap} cb={msgCallbacks} hoveredMsgId={hoveredMsgId} />
+                    {/* Thread indicator */}
+                    <ThreadIndicator parentId={msg.id} childrenMap={childrenMap} cb={msgCallbacks} parentMessage={msg} isActiveThread={threadParent?.id === msg.id} />
 
                     {/* Read indicator — only on non-own messages, at burst boundaries */}
                     {(() => {
@@ -2417,13 +2493,33 @@ export function ChannelPageClient({
 
         {/* Typing indicator */}
         {typingUsers.length > 0 && (
-          <div className="shrink-0 px-5 pb-1">
+          <div className="flex shrink-0 items-center gap-2 px-5 pb-1">
+            <div className="flex -space-x-1.5">
+              {typingUsers.slice(0, 3).map((tu) => {
+                const member = liveMembers.find((m) => m.user_id === tu.user_id);
+                const initials = member
+                  ? getInitials(member.full_name, member.email)
+                  : (tu.user_name?.[0] ?? "?").toUpperCase();
+                return member?.avatar_url ? (
+                  <img key={tu.user_id} src={member.avatar_url} alt="" className="h-5 w-5 rounded-full border border-[#0a0a0a]" />
+                ) : (
+                  <div key={tu.user_id} className="flex h-5 w-5 items-center justify-center rounded-full border border-[#0a0a0a] bg-[#1a1a1a] text-[8px] font-bold text-white">
+                    {initials}
+                  </div>
+                );
+              })}
+            </div>
             <span className="text-[12px] text-[#888]">
               {typingUsers.length === 1
-                ? `${typingUsers[0].user_name || "Someone"} is typing...`
+                ? `${typingUsers[0].user_name || "Someone"} is typing`
                 : typingUsers.length === 2
-                  ? `${typingUsers[0].user_name} and ${typingUsers[1].user_name} are typing...`
-                  : `${typingUsers.length} people are typing...`}
+                  ? `${typingUsers[0].user_name} and ${typingUsers[1].user_name} are typing`
+                  : `${typingUsers.length} people are typing`}
+              <span className="ml-0.5 inline-flex">
+                <span className="animate-bounce text-[12px]" style={{ animationDelay: "0ms", animationDuration: "1s" }}>.</span>
+                <span className="animate-bounce text-[12px]" style={{ animationDelay: "150ms", animationDuration: "1s" }}>.</span>
+                <span className="animate-bounce text-[12px]" style={{ animationDelay: "300ms", animationDuration: "1s" }}>.</span>
+              </span>
             </span>
           </div>
         )}
@@ -2485,6 +2581,7 @@ export function ChannelPageClient({
               .single();
             if (error) {
               setMessages((prev) => prev.filter((m) => m.id !== tempId));
+              setToast({ message: "Failed to send GIF. Please try again.", type: "error" });
             } else if (inserted) {
               await supabase.from("attachments").insert({
                 message_id: inserted.id,
@@ -2499,6 +2596,37 @@ export function ChannelPageClient({
           }}
         />
       </div>
+
+      {/* Thread panel */}
+      {threadParent && (
+        <ThreadPanel
+          parentMessage={threadParent}
+          channelId={channel.id}
+          onClose={() => setThreadParent(null)}
+          currentUserId={user.id}
+          currentUser={{ id: user.id, fullName: user.fullName, email: user.email, avatarUrl: user.avatarUrl }}
+          members={liveMembers}
+          msgCallbacks={msgCallbacks}
+          onSendReply={async (content, alsoSendToChannel) => {
+            const supabase = createClient();
+            // Send as thread reply
+            await supabase.from("messages").insert({
+              channel_id: channel.id,
+              sender_id: user.id,
+              content,
+              parent_message_id: threadParent.id,
+            });
+            // Optionally also send as top-level channel message
+            if (alsoSendToChannel) {
+              await supabase.from("messages").insert({
+                channel_id: channel.id,
+                sender_id: user.id,
+                content,
+              });
+            }
+          }}
+        />
+      )}
 
       {/* Modals */}
       <CreateChannelModal
@@ -2575,6 +2703,49 @@ export function ChannelPageClient({
             );
           }}
         />
+      )}
+      <ConfirmModal
+        open={leaveConfirmOpen}
+        onClose={() => setLeaveConfirmOpen(false)}
+        onConfirm={async () => {
+          setLeaveConfirmOpen(false);
+          setLeavingChannel(true);
+          try {
+            const res = await fetch(`/api/channels/${channel.id}/members?user_id=${user.id}`, { method: "DELETE" });
+            if (res.ok) {
+              router.push(`/box/${box.short_id}`);
+              router.refresh();
+            } else {
+              const data = await res.json();
+              alert(data.error || "Failed to leave channel");
+            }
+          } finally {
+            setLeavingChannel(false);
+          }
+        }}
+        title={`Leave #${channel.name}?`}
+        description="You'll need to be re-invited to rejoin this channel."
+        confirmLabel="Leave"
+        confirmVariant="danger"
+        loading={leavingChannel}
+      />
+
+      {/* Toast notification */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 z-[200] -translate-x-1/2">
+          <div className={`flex items-center gap-2 rounded-[8px] border px-4 py-2.5 text-[13px] shadow-lg ${
+            toast.type === "error"
+              ? "border-[#de1135]/30 bg-[#1a0a0e] text-[#ff6b84]"
+              : toast.type === "success"
+                ? "border-[#22c55e]/30 bg-[#0a1a0e] text-[#6fdd6f]"
+                : "border-[#3b82f6]/30 bg-[#0a0e1a] text-[#6b9eff]"
+          }`}>
+            <span>{toast.message}</span>
+            <button onClick={() => setToast(null)} className="ml-2 text-current opacity-60 hover:opacity-100">
+              &times;
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

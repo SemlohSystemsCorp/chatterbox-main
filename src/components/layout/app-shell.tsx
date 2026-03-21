@@ -1,6 +1,8 @@
 "use client";
 
 import { Sidebar } from "./sidebar";
+import { useBanCheck } from "@/hooks/use-ban-check";
+import { BannedScreen } from "@/components/banned-screen";
 
 interface AppShellUser {
   id: string;
@@ -27,6 +29,17 @@ interface AppShellProps {
 }
 
 export function AppShell({ user, boxes, activeBoxId, hideSidebar, children }: AppShellProps) {
+  const banStatus = useBanCheck();
+
+  if (banStatus.banned) {
+    return (
+      <BannedScreen
+        reason={banStatus.ban_reason}
+        bannedUntil={banStatus.banned_until}
+      />
+    );
+  }
+
   return (
     <div className="flex h-screen bg-[#0a0a0a]">
       {!hideSidebar && <Sidebar user={user} boxes={boxes} activeBoxId={activeBoxId} />}

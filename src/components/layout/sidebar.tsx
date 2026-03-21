@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CommentDiscussionIcon as MessageSquare, PlusIcon as Plus, SearchIcon as Search, HashIcon as Hash, PeopleIcon as Users, LinkIcon } from "@primer/octicons-react";
+import { CommentDiscussionIcon as MessageSquare, PlusIcon as Plus, SearchIcon as Search, HashIcon as Hash, PeopleIcon as Users, LinkIcon, ShieldIcon as Shield } from "@primer/octicons-react";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Tooltip } from "@/components/ui/tooltip";
+import { isSuperAdmin } from "@/lib/super-admin";
 
 interface SidebarBox {
   id: string;
@@ -36,7 +37,7 @@ export function Sidebar({ user, boxes, activeBoxId }: SidebarProps) {
       {/* Header */}
       <div className="flex h-14 items-center justify-between border-b border-[#1a1a1a] px-4">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-white">
+          <div className="logo-glass flex h-7 w-7 items-center justify-center rounded-md bg-white">
             <MessageSquare className="h-4 w-4 text-black" />
           </div>
           <span className="text-[15px] font-bold text-white">Chatterbox</span>
@@ -166,12 +167,29 @@ export function Sidebar({ user, boxes, activeBoxId }: SidebarProps) {
             Channels
           </Link>
           <Link
-            href="/dashboard"
-            className="flex w-full items-center gap-2.5 rounded-[8px] px-2 py-[7px] text-[13px] text-[#666] transition-colors hover:bg-[#111] hover:text-white"
+            href="/dashboard/messages"
+            className={`flex w-full items-center gap-2.5 rounded-[8px] px-2 py-[7px] text-[13px] transition-colors ${
+              pathname === "/dashboard/messages"
+                ? "bg-[#1a1a1a] text-white"
+                : "text-[#666] hover:bg-[#111] hover:text-white"
+            }`}
           >
             <Users className="h-4 w-4" />
             Direct Messages
           </Link>
+          {isSuperAdmin(user.email) && (
+            <Link
+              href="/super-admin"
+              className={`flex w-full items-center gap-2.5 rounded-[8px] px-2 py-[7px] text-[13px] transition-colors ${
+                pathname === "/super-admin"
+                  ? "bg-[#1a1a1a] text-white"
+                  : "text-[#666] hover:bg-[#111] hover:text-white"
+              }`}
+            >
+              <Shield className="h-4 w-4" />
+              Super Admin
+            </Link>
+          )}
         </div>
       </div>
 

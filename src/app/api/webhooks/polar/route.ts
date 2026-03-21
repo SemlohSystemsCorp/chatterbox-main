@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
     if (boxId) {
       // Update box plan
-      const { data: box } = await supabaseAdmin
+      const { data: box, error: boxError } = await supabaseAdmin
         .from("boxes")
         .update({
           plan: "pro",
@@ -58,8 +58,13 @@ export async function POST(request: Request) {
         .select("name, short_id")
         .single();
 
+      if (boxError) {
+        console.error("Failed to update box:", boxError);
+        return NextResponse.json({ error: "Failed to process webhook" }, { status: 500 });
+      }
+
       // Store subscription record
-      await supabaseAdmin.from("subscriptions").upsert(
+      const { error: subError } = await supabaseAdmin.from("subscriptions").upsert(
         {
           id: subscription.id,
           box_id: boxId,
@@ -76,6 +81,11 @@ export async function POST(request: Request) {
         },
         { onConflict: "id" }
       );
+
+      if (subError) {
+        console.error("Failed to upsert subscription:", subError);
+        return NextResponse.json({ error: "Failed to process webhook" }, { status: 500 });
+      }
 
       // Send receipt email
       if (customerEmail && box) {
@@ -106,12 +116,17 @@ export async function POST(request: Request) {
     const boxId = subscription.metadata?.box_id as string | undefined;
 
     if (boxId) {
-      await supabaseAdmin
+      const { error: boxError } = await supabaseAdmin
         .from("boxes")
         .update({ plan: "pro" })
         .eq("id", boxId);
 
-      await supabaseAdmin
+      if (boxError) {
+        console.error("Failed to update box:", boxError);
+        return NextResponse.json({ error: "Failed to process webhook" }, { status: 500 });
+      }
+
+      const { error: subError } = await supabaseAdmin
         .from("subscriptions")
         .update({
           status: subscription.status,
@@ -120,6 +135,11 @@ export async function POST(request: Request) {
           current_period_end: subscription.currentPeriodEnd,
         })
         .eq("id", subscription.id);
+
+      if (subError) {
+        console.error("Failed to update subscription:", subError);
+        return NextResponse.json({ error: "Failed to process webhook" }, { status: 500 });
+      }
     }
   }
 
@@ -132,18 +152,28 @@ export async function POST(request: Request) {
     const boxId = subscription.metadata?.box_id as string | undefined;
 
     if (boxId) {
-      await supabaseAdmin
+      const { error: boxError } = await supabaseAdmin
         .from("boxes")
         .update({ plan: "free", polar_subscription_id: null })
         .eq("id", boxId);
 
-      await supabaseAdmin
+      if (boxError) {
+        console.error("Failed to update box:", boxError);
+        return NextResponse.json({ error: "Failed to process webhook" }, { status: 500 });
+      }
+
+      const { error: subError } = await supabaseAdmin
         .from("subscriptions")
         .update({
           status: subscription.status,
           canceled_at: new Date().toISOString(),
         })
         .eq("id", subscription.id);
+
+      if (subError) {
+        console.error("Failed to update subscription:", subError);
+        return NextResponse.json({ error: "Failed to process webhook" }, { status: 500 });
+      }
     }
   }
 

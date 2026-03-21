@@ -102,6 +102,7 @@ function ParticipantTile({
   avatarUrl,
   isActiveSpeaker,
   isVideoOff,
+  isAudioOff,
   isSmall,
 }: {
   sessionId: string;
@@ -110,8 +111,13 @@ function ParticipantTile({
   avatarUrl: string | null;
   isActiveSpeaker: boolean;
   isVideoOff: boolean;
+  isAudioOff: boolean;
   isSmall?: boolean;
 }) {
+  const [avatarBroken, setAvatarBroken] = useState(false);
+
+  const showAvatar = avatarUrl && !avatarBroken;
+
   return (
     <div
       className={`relative overflow-hidden rounded-[12px] bg-[#111] ${
@@ -120,10 +126,11 @@ function ParticipantTile({
     >
       {isVideoOff ? (
         <div className="absolute inset-0 flex items-center justify-center">
-          {avatarUrl ? (
+          {showAvatar ? (
             <img
               src={avatarUrl}
               alt={userName}
+              onError={() => setAvatarBroken(true)}
               className={`rounded-full object-cover ${
                 isSmall ? "h-12 w-12" : "h-20 w-20"
               }`}
@@ -145,6 +152,48 @@ function ParticipantTile({
           type="video"
           className="h-full w-full object-cover"
         />
+      )}
+      {/* Mute / camera-off indicators */}
+      {(isAudioOff || isVideoOff) && (
+        <div className="absolute bottom-2 right-2 flex items-center gap-1">
+          {isAudioOff && (
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-black/60">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#ef4444"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={isSmall ? "h-3 w-3" : "h-3.5 w-3.5"}
+              >
+                <line x1="1" y1="1" x2="23" y2="23" />
+                <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+                <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2c0 .76-.13 1.49-.35 2.17" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+                <line x1="8" y1="23" x2="16" y2="23" />
+              </svg>
+            </div>
+          )}
+          {isVideoOff && (
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-black/60">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#ef4444"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={isSmall ? "h-3 w-3" : "h-3.5 w-3.5"}
+              >
+                <line x1="1" y1="1" x2="23" y2="23" />
+                <path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34m-7.72-2.06a4 4 0 1 1-5.56-5.56" />
+              </svg>
+            </div>
+          )}
+        </div>
       )}
       {/* Name badge */}
       <div className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1">
@@ -300,8 +349,32 @@ function CallUI({
           }
         }
         setAvatars((prev) => ({ ...prev, ...map }));
-      }).catch(() => {});
-    }).catch(() => {});
+      }).catch((err) => {
+          console.warn("Failed to fetch participant avatars:", err);
+          // Set null for unknown IDs so they show initials
+          const fallback: Record<string, string | null> = {};
+          const participants = daily.participants();
+          for (const sid of remoteIds) {
+            if (!(sid in avatars)) {
+              fallback[sid] = null;
+            }
+          }
+          if (Object.keys(fallback).length > 0) {
+            setAvatars((prev) => ({ ...prev, ...fallback }));
+          }
+        });
+    }).catch((err) => {
+      console.warn("Failed to load supabase client for avatars:", err);
+      const fallback: Record<string, string | null> = {};
+      for (const sid of remoteIds) {
+        if (!(sid in avatars)) {
+          fallback[sid] = null;
+        }
+      }
+      if (Object.keys(fallback).length > 0) {
+        setAvatars((prev) => ({ ...prev, ...fallback }));
+      }
+    });
   }, [daily, remoteIds, avatars]);
 
   // Get participant names from daily
@@ -327,6 +400,18 @@ function CallUI({
       return !p[sessionId]?.video;
     },
     [daily, localParticipant?.session_id, localParticipant?.video]
+  );
+
+  const getParticipantAudioOff = useCallback(
+    (sessionId: string) => {
+      if (!daily) return true;
+      if (sessionId === localParticipant?.session_id) {
+        return !localParticipant?.audio;
+      }
+      const p = daily.participants();
+      return !p[sessionId]?.audio;
+    },
+    [daily, localParticipant?.session_id, localParticipant?.audio]
   );
 
   const getParticipantAvatar = useCallback(
@@ -392,6 +477,27 @@ function CallUI({
       return !prev;
     });
   }, []);
+
+  // Keyboard shortcuts for call controls
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key === "d") {
+          e.preventDefault();
+          toggleAudio();
+        } else if (e.key === "e") {
+          e.preventDefault();
+          toggleVideo();
+        } else if (e.key === "s") {
+          e.preventDefault();
+          toggleScreen();
+        }
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [toggleAudio, toggleVideo, toggleScreen]);
 
   // Loading / error states
   if (joinState === "error") {
@@ -503,6 +609,7 @@ function CallUI({
                       avatarUrl={getParticipantAvatar(sid)}
                       isActiveSpeaker={activeSpeakerId === sid}
                       isVideoOff={getParticipantVideoOff(sid)}
+                      isAudioOff={getParticipantAudioOff(sid)}
                       isSmall
                     />
                   </div>
@@ -525,6 +632,7 @@ function CallUI({
                   avatarUrl={getParticipantAvatar(sid)}
                   isActiveSpeaker={activeSpeakerId === sid}
                   isVideoOff={getParticipantVideoOff(sid)}
+                  isAudioOff={getParticipantAudioOff(sid)}
                 />
               ))}
             </div>
@@ -603,7 +711,7 @@ function CallUI({
 
       {/* Controls */}
       <div className="flex h-20 shrink-0 items-center justify-center gap-3 border-t border-[#1a1a1a]">
-        <Tooltip label={isMuted ? "Unmute" : "Mute"}>
+        <Tooltip label={isMuted ? "Unmute (⌘D)" : "Mute (⌘D)"}>
           <button
             onClick={toggleAudio}
             className={`group relative flex h-12 w-12 items-center justify-center rounded-full transition-colors ${
@@ -623,7 +731,7 @@ function CallUI({
           </button>
         </Tooltip>
 
-        <Tooltip label={isVideoOff ? "Turn on camera" : "Turn off camera"}>
+        <Tooltip label={isVideoOff ? "Turn on camera (⌘E)" : "Turn off camera (⌘E)"}>
           <button
             onClick={toggleVideo}
             className={`group relative flex h-12 w-12 items-center justify-center rounded-full transition-colors ${
@@ -643,7 +751,7 @@ function CallUI({
           </button>
         </Tooltip>
 
-        <Tooltip label={isSharingScreen ? "Stop sharing" : "Share screen"}>
+        <Tooltip label={isSharingScreen ? "Stop sharing (⌘S)" : "Share screen (⌘S)"}>
           <button
             onClick={toggleScreen}
             className={`group relative flex h-12 w-12 items-center justify-center rounded-full transition-colors ${

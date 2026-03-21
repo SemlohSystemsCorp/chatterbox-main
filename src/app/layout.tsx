@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
+import { TauriGlass } from "@/components/tauri-glass";
 import "./globals.css";
 
 const inter = Inter({
@@ -44,6 +45,14 @@ export const metadata: Metadata = {
     siteName: APP_NAME,
     title: "Chatterbox — The best way to communicate",
     description: APP_DESCRIPTION,
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Chatterbox — The best way to communicate",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -78,7 +87,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(window.__TAURI_INTERNALS__||window.__TAURI__)document.documentElement.setAttribute("data-tauri","")}catch(e){}`,
+          }}
+        />
+      </head>
       <body className={`${inter.variable} font-sans antialiased bg-[var(--cb-bg)] text-[var(--cb-text)]`}>
+        <TauriGlass />
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

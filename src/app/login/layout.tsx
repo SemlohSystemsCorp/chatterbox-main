@@ -18,7 +18,7 @@ export default function AuthLayout({
       <header className="h-16 shrink-0 bg-[#111] border-b border-[#1a1a1a] px-6 lg:px-8">
         <div className="mx-auto flex h-full max-w-[1440px] items-center">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-white">
+            <div className="logo-glass flex h-7 w-7 items-center justify-center rounded-md bg-white">
               <MessageSquare className="h-4 w-4 text-black" />
             </div>
             <span className="text-[18px] font-bold text-white">Chatterbox</span>

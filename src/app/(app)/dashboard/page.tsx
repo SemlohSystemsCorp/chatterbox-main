@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getAuthUser, getUserBoxes, getUserConversations } from "@/lib/data";
+import { getAuthUser, getUserBoxes, getUserConversations, getUnreadCountsForUser, getUnreadCountsForConversations } from "@/lib/data";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { DashboardClient } from "./dashboard-client";
 
@@ -16,7 +16,7 @@ export default async function DashboardPage() {
 
   // Fetch channel counts, member counts, and recent channels per box in parallel
   const boxIds = boxes.map((b) => b.id);
-  const [channelCounts, memberCounts, recentChannelsByBox] = await Promise.all([
+  const [channelCounts, memberCounts, recentChannelsByBox, userChannelMemberships] = await Promise.all([
     boxIds.length > 0
       ? supabase
           .from("channels")
@@ -50,7 +50,7 @@ export default async function DashboardPage() {
           .select("box_id, short_id, name")
           .in("box_id", boxIds)
           .eq("is_archived", false)
-          .order("created_at", { ascending: true })
+          .order("updated_at", { ascending: false })
           .limit(50)
           .then(({ data }) => {
             const byBox: Record<string, { short_id: string; name: string }[]> = {};
@@ -63,6 +63,14 @@ export default async function DashboardPage() {
             return byBox;
           })
       : Promise.resolve({} as Record<string, { short_id: string; name: string }[]>),
+    // Fetch user's channel memberships to compute per-box unread counts
+    boxIds.length > 0
+      ? supabase
+          .from("channel_members")
+          .select("channel_id, channels!inner(box_id)")
+          .eq("user_id", user.id)
+          .then(({ data }) => data ?? [])
+      : Promise.resolve([] as { channel_id: string; channels: unknown }[]),
   ]);
 
   const boxStats: Record<string, { channels: number; members: number }> = {};
@@ -71,6 +79,21 @@ export default async function DashboardPage() {
       channels: channelCounts[b.id] ?? 0,
       members: memberCounts[b.id] ?? 0,
     };
+  }
+
+  // Compute per-box unread counts
+  const channelsByBox: Record<string, string[]> = {};
+  for (const m of userChannelMemberships) {
+    const boxId = (m.channels as unknown as { box_id: string }).box_id;
+    if (!channelsByBox[boxId]) channelsByBox[boxId] = [];
+    channelsByBox[boxId].push(m.channel_id);
+  }
+  const allChannelIds = Object.values(channelsByBox).flat();
+  const channelUnreads = await getUnreadCountsForUser(supabase, user.id, allChannelIds);
+
+  const boxUnreadCounts: Record<string, number> = {};
+  for (const [boxId, chIds] of Object.entries(channelsByBox)) {
+    boxUnreadCounts[boxId] = chIds.reduce((sum, id) => sum + (channelUnreads[id] ?? 0), 0);
   }
 
   // Take most recent DMs (up to 5)
@@ -82,6 +105,33 @@ export default async function DashboardPage() {
     updatedAt: c.updated_at,
     participants: c.participants,
   }));
+
+  // Compute DM unread counts + fetch last message previews
+  const dmIds = recentDMs.map((d) => d.id);
+  const [dmUnreadCounts, lastMsgData] = await Promise.all([
+    getUnreadCountsForConversations(supabase, user.id, dmIds),
+    dmIds.length > 0
+      ? supabase
+          .from("messages")
+          .select("conversation_id, content, sender_id, created_at")
+          .in("conversation_id", dmIds)
+          .is("parent_message_id", null)
+          .order("created_at", { ascending: false })
+          .limit(50)
+          .then(({ data }) => {
+            const map: Record<string, { content: string; senderId: string }> = {};
+            for (const msg of data ?? []) {
+              if (msg.conversation_id && !map[msg.conversation_id]) {
+                map[msg.conversation_id] = {
+                  content: msg.content,
+                  senderId: msg.sender_id,
+                };
+              }
+            }
+            return map;
+          })
+      : Promise.resolve({} as Record<string, { content: string; senderId: string }>),
+  ]);
 
   // Use service role to bypass RLS — user isn't a member of invited boxes
   const admin = createServiceClient(
@@ -142,6 +192,9 @@ export default async function DashboardPage() {
       recentChannels={recentChannelsByBox}
       recentDMs={recentDMs}
       pendingInvites={pendingInvites}
+      boxUnreadCounts={boxUnreadCounts}
+      dmUnreadCounts={dmUnreadCounts}
+      lastMessages={lastMsgData}
     />
   );
 }

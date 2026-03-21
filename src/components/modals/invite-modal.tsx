@@ -29,7 +29,7 @@ export function InviteModal({ open, onClose, boxId, boxName }: InviteModalProps)
   const [emailInput, setEmailInput] = useState("");
   const [emails, setEmails] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
-  const [sendResult, setSendResult] = useState<{ sent: number; total: number } | null>(null);
+  const [sendResult, setSendResult] = useState<{ sent: number; total: number; failedEmails?: string[] } | null>(null);
   const [sendError, setSendError] = useState("");
 
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -135,6 +135,7 @@ export function InviteModal({ open, onClose, boxId, boxName }: InviteModalProps)
 
   async function handleSendEmails() {
     if (emails.length === 0) return;
+    const attemptedEmails = [...emails];
     setSending(true);
     setSendError("");
     setSendResult(null);
@@ -149,14 +150,28 @@ export function InviteModal({ open, onClose, boxId, boxName }: InviteModalProps)
       if (!res.ok) {
         setSendError(data.error || "Failed to send invites");
       } else {
-        setSendResult({ sent: data.sent, total: data.total });
-        setEmails([]);
+        const failedEmails: string[] = data.failed_emails
+          ? data.failed_emails
+          : data.sent < data.total
+            ? attemptedEmails.slice(data.sent)
+            : [];
+        setSendResult({ sent: data.sent, total: data.total, failedEmails });
+        if (failedEmails.length > 0) {
+          setEmails(failedEmails);
+        } else {
+          setEmails([]);
+        }
         setEmailInput("");
       }
     } catch {
       setSendError("Something went wrong");
     }
     setSending(false);
+  }
+
+  function handleRetryFailed() {
+    setSendResult(null);
+    handleSendEmails();
   }
 
   if (!open) return null;
@@ -258,16 +273,47 @@ export function InviteModal({ open, onClose, boxId, boxName }: InviteModalProps)
                   </div>
                 </div>
 
+                <p className="mt-1.5 text-[11px] text-[#555]">
+                  {emails.length === 0
+                    ? "You can invite up to 10 people at once"
+                    : `${10 - emails.length} of 10 remaining`}
+                </p>
+
                 {sendError && (
                   <p className="mt-1.5 text-[12px] text-red-400">{sendError}</p>
                 )}
 
                 {sendResult && (
-                  <p className="mt-1.5 text-[12px] text-[#22c55e]">
-                    {sendResult.sent === sendResult.total
-                      ? `${sendResult.sent} invite${sendResult.sent !== 1 ? "s" : ""} sent!`
-                      : `${sendResult.sent} of ${sendResult.total} sent`}
-                  </p>
+                  <div className="mt-1.5">
+                    {sendResult.sent === sendResult.total ? (
+                      <p className="text-[12px] text-[#22c55e]">
+                        {sendResult.sent} invite{sendResult.sent !== 1 ? "s" : ""} sent!
+                      </p>
+                    ) : (
+                      <div className="rounded-[6px] bg-amber-500/10 px-2.5 py-2">
+                        <p className="text-[12px] text-amber-400">
+                          {sendResult.sent} of {sendResult.total} sent successfully
+                        </p>
+                        {sendResult.failedEmails && sendResult.failedEmails.length > 0 && (
+                          <ul className="mt-1 space-y-0.5">
+                            {sendResult.failedEmails.map((email) => (
+                              <li key={email} className="text-[11px] text-[#888]">
+                                Failed: {email}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        <button
+                          type="button"
+                          onClick={handleRetryFailed}
+                          disabled={sending}
+                          className="mt-1.5 text-[12px] font-medium text-amber-400 transition-colors hover:text-amber-300"
+                        >
+                          Retry failed
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {emails.length > 0 && (

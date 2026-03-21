@@ -1,54 +1,227 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeftIcon as ArrowLeft } from "@primer/octicons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/utils/cn";
+
+type Step = "credentials" | "verify";
 
 export default function SignupPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/dashboard";
+  const redirectTo = searchParams.get("redirect") || "/onboarding";
+  const [step, setStep] = useState<Step>("credentials");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
 
+  // Verify step state
+  const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const [verifying, setVerifying] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  // Cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    // Send verification code first
-    const res = await fetch("/api/auth/send-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, type: "email_verification" }),
-    });
+    try {
+      const res = await fetch("/api/auth/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, type: "email_verification" }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      setError(data.error || "Failed to send verification code");
+      if (!res.ok) {
+        setError(data.error || "Failed to send verification code");
+        setLoading(false);
+        return;
+      }
+
       setLoading(false);
-      return;
+      setResendCooldown(60);
+      setStep("verify");
+      setTimeout(() => inputRefs.current[0]?.focus(), 50);
+    } catch {
+      setError(
+        "Could not connect to the server. Check your internet connection."
+      );
+      setLoading(false);
+    }
+  }
+
+  function handleCodeChange(index: number, value: string) {
+    if (value && !/^\d$/.test(value)) return;
+
+    const newCode = [...code];
+    newCode[index] = value;
+    setCode(newCode);
+
+    if (value && index < 5) {
+      inputRefs.current[index + 1]?.focus();
     }
 
-    // Store signup data in sessionStorage for the verify page
-    sessionStorage.setItem(
-      "chatterbox_signup",
-      JSON.stringify({ email, password })
-    );
-
-    setLoading(false);
-    // Pass redirect through to verify page via sessionStorage
-    if (redirectTo !== "/dashboard") {
-      sessionStorage.setItem("chatterbox_redirect", redirectTo);
+    if (value && index === 5 && newCode.every((d) => d !== "")) {
+      submitCode(newCode.join(""));
     }
-    router.push("/verify");
+  }
+
+  function handleCodeKeyDown(
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) {
+    if (e.key === "Backspace" && !code[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  }
+
+  function handleCodePaste(e: React.ClipboardEvent) {
+    e.preventDefault();
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
+    if (pasted.length === 0) return;
+
+    const newCode = [...code];
+    for (let i = 0; i < pasted.length; i++) {
+      newCode[i] = pasted[i];
+    }
+    setCode(newCode);
+
+    const nextEmpty = newCode.findIndex((d) => d === "");
+    inputRefs.current[nextEmpty === -1 ? 5 : nextEmpty]?.focus();
+
+    if (pasted.length === 6) {
+      submitCode(pasted);
+    }
+  }
+
+  const submitCode = useCallback(
+    async (codeStr: string) => {
+      if (!email || !password) return;
+      setError("");
+      setVerifying(true);
+
+      try {
+        // 1. Verify the code
+        const verifyRes = await fetch("/api/auth/verify-code", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            code: codeStr,
+            type: "email_verification",
+          }),
+        });
+
+        const verifyData = await verifyRes.json();
+
+        if (!verifyRes.ok) {
+          setError(verifyData.error || "Verification failed");
+          setCode(["", "", "", "", "", ""]);
+          inputRefs.current[0]?.focus();
+          setVerifying(false);
+          return;
+        }
+
+        // 2. Create account
+        const supabase = createClient();
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              email_verified: true,
+              onboarding_completed: false,
+            },
+            emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+          },
+        });
+
+        if (signUpError) {
+          setError(signUpError.message);
+          setVerifying(false);
+          return;
+        }
+
+        // 3. Sign them in
+        const { error: signInError } =
+          await supabase.auth.signInWithPassword({ email, password });
+
+        if (signInError) {
+          router.push("/login");
+          return;
+        }
+
+        // Send welcome email (fire-and-forget)
+        fetch("/api/auth/welcome", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, name: "" }),
+        }).catch(() => {});
+
+        // Navigate to onboarding, preserving invite context if present
+        const joinMatch = redirectTo.match(/\/join\?code=([^&]+)/);
+        const onboardingPath = joinMatch
+          ? `/onboarding?invite=${encodeURIComponent(joinMatch[1])}`
+          : "/onboarding";
+        router.push(onboardingPath);
+        router.refresh();
+      } catch {
+        setError(
+          "Could not connect to the server. Check your internet connection."
+        );
+        setVerifying(false);
+      }
+    },
+    [email, password, redirectTo, router]
+  );
+
+  async function handleResend() {
+    if (resendCooldown > 0) return;
+    setError("");
+
+    try {
+      const res = await fetch("/api/auth/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, type: "email_verification" }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to resend code");
+        return;
+      }
+
+      setResendCooldown(60);
+      setCode(["", "", "", "", "", ""]);
+      inputRefs.current[0]?.focus();
+    } catch {
+      setError(
+        "Could not connect to the server. Check your internet connection."
+      );
+    }
   }
 
   async function handleGoogleOAuth() {
@@ -69,6 +242,82 @@ export default function SignupPage() {
     }
   }
 
+  // ── Verify Step ──
+  if (step === "verify") {
+    return (
+      <div>
+        <button
+          onClick={() => {
+            setStep("credentials");
+            setCode(["", "", "", "", "", ""]);
+            setError("");
+          }}
+          className="mb-8 flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-[#1a1a1a]"
+        >
+          <ArrowLeft className="h-5 w-5 text-white" />
+        </button>
+
+        <h1 className="mb-2 text-[36px] font-bold leading-[44px] tracking-tight text-white">
+          Enter the code
+        </h1>
+        <p className="mb-1 text-[16px] leading-[24px] text-[#888]">
+          We sent a 6-digit verification code to
+        </p>
+        <p className="mb-8 text-[16px] font-medium leading-[24px] text-white">
+          {email}
+        </p>
+
+        {/* Code inputs */}
+        <div className="mb-6 flex gap-3" onPaste={handleCodePaste}>
+          {code.map((digit, i) => (
+            <input
+              key={i}
+              ref={(el) => {
+                inputRefs.current[i] = el;
+              }}
+              type="text"
+              inputMode="numeric"
+              autoComplete={i === 0 ? "one-time-code" : "off"}
+              maxLength={1}
+              value={digit}
+              onChange={(e) => handleCodeChange(i, e.target.value)}
+              onKeyDown={(e) => handleCodeKeyDown(i, e)}
+              disabled={verifying}
+              className="h-[56px] w-full rounded-[8px] border-2 border-transparent bg-[#1a1a1a] text-center text-[24px] font-bold text-white outline-none transition-colors focus:border-white focus:bg-[#222] disabled:text-[#555]"
+            />
+          ))}
+        </div>
+
+        {error && (
+          <p className="mb-4 text-[14px] text-[#de1135]">{error}</p>
+        )}
+
+        {verifying && (
+          <div className="mb-4">
+            <Spinner label="Verifying..." />
+          </div>
+        )}
+
+        <div className="flex items-center gap-1 text-[14px]">
+          <span className="text-[#888]">Didn&apos;t receive a code?</span>
+          {resendCooldown > 0 ? (
+            <span className="text-[#555]">
+              Resend in {resendCooldown}s
+            </span>
+          ) : (
+            <button
+              onClick={handleResend}
+              className="font-medium text-white underline underline-offset-2"
+            >
+              Resend
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Credentials Step ──
   return (
     <div>
       <h1 className="mb-6 text-[36px] font-bold leading-[44px] tracking-tight text-white">
@@ -107,16 +356,36 @@ export default function SignupPage() {
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-        <Input
-          id="password"
-          label="Password"
-          type="password"
-          placeholder="Min 8 characters"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          minLength={8}
-          required
-        />
+        <div>
+          <Input
+            id="password"
+            label="Password"
+            type="password"
+            placeholder="Min 8 characters"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            minLength={8}
+            required
+          />
+          {password.length > 0 && (
+            <p
+              className={cn(
+                "mt-[6px] text-[13px]",
+                password.length < 8
+                  ? "text-[#de1135]"
+                  : password.length < 12
+                    ? "text-[#f5a623]"
+                    : "text-[#1db954]"
+              )}
+            >
+              {password.length < 8
+                ? "Must be at least 8 characters"
+                : password.length < 12
+                  ? "Weak password"
+                  : "Strong password"}
+            </p>
+          )}
+        </div>
 
         {error && (
           <p className="text-[14px] text-[#de1135]">{error}</p>

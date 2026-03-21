@@ -47,7 +47,9 @@ export function EmojiPicker({ onSelect, onOpenChange, children }: EmojiPickerPro
             skinTonePosition="none"
             set="native"
             perLine={8}
-            maxFrequentRows={2}
+            maxFrequentRows={3}
+            navPosition="top"
+            categories={["frequent", "people", "nature", "foods", "activity", "places", "objects", "symbols", "flags"]}
           />
         </div>
       )}

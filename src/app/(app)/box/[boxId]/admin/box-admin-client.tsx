@@ -18,6 +18,8 @@ import {
   ClockIcon as Clock,
   AlertFillIcon as AlertTriangle,
   ArrowSwitchIcon as ArrowUpDown,
+  DownloadIcon as Download,
+  SearchIcon as Search,
 } from "@primer/octicons-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { TopBar } from "@/components/layout/top-bar";
@@ -329,6 +331,11 @@ export function BoxAdminClient({
   const [hasMoreLogs, setHasMoreLogs] = useState(false);
   const [logsTotal, setLogsTotal] = useState(0);
 
+  // Log filter state
+  const [logSearch, setLogSearch] = useState("");
+  const [logActionFilter, setLogActionFilter] = useState("all");
+  const [logDateFilter, setLogDateFilter] = useState("all");
+
   // Stats state
   const [stats, setStats] = useState<Stats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
@@ -449,6 +456,50 @@ export function BoxAdminClient({
     },
     {} as Record<string, number>
   );
+
+  // Filter logs
+  const filteredLogs = logs.filter((log) => {
+    // Text search
+    if (logSearch) {
+      const search = logSearch.toLowerCase();
+      const actorName = (log.profiles?.full_name || log.profiles?.email || "").toLowerCase();
+      const actionDesc = formatLogAction(log).toLowerCase();
+      if (!actorName.includes(search) && !actionDesc.includes(search)) {
+        return false;
+      }
+    }
+    // Action type filter
+    if (logActionFilter !== "all" && log.action !== logActionFilter) {
+      return false;
+    }
+    // Date filter
+    if (logDateFilter !== "all") {
+      const logTime = new Date(log.created_at).getTime();
+      const now = Date.now();
+      if (logDateFilter === "24h" && now - logTime > 24 * 60 * 60 * 1000) return false;
+      if (logDateFilter === "7d" && now - logTime > 7 * 24 * 60 * 60 * 1000) return false;
+      if (logDateFilter === "30d" && now - logTime > 30 * 24 * 60 * 60 * 1000) return false;
+    }
+    return true;
+  });
+
+  function exportLogs() {
+    const csv = ["Date,Actor,Action,Details"];
+    filteredLogs.forEach((log) => {
+      const date = new Date(log.created_at).toISOString();
+      const actor = (log.profiles?.full_name || "Unknown").replace(/"/g, '""');
+      const action = formatLogAction(log).replace(/"/g, '""');
+      const details = JSON.stringify(log.metadata || {}).replace(/"/g, '""');
+      csv.push(`"${date}","${actor}","${action}","${details}"`);
+    });
+    const blob = new Blob([csv.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   const sections: { id: Section; label: string; icon: typeof Shield }[] = [
     { id: "permissions", label: "Permissions", icon: Shield },
@@ -724,10 +775,20 @@ export function BoxAdminClient({
             {/* ── AUDIT LOGS ── */}
             {activeSection === "logs" && (
               <>
-                <h2 className="mb-1 text-[20px] font-bold text-white">
-                  Audit Logs
-                </h2>
-                <p className="mb-6 text-[13px] text-[#555]">
+                <div className="mb-1 flex items-center justify-between">
+                  <h2 className="text-[20px] font-bold text-white">
+                    Audit Logs
+                  </h2>
+                  <button
+                    onClick={exportLogs}
+                    disabled={filteredLogs.length === 0}
+                    className="flex items-center gap-1.5 rounded-[8px] border border-[#1a1a1a] px-3 py-1.5 text-[12px] font-medium text-[#666] transition-colors hover:border-[#2a2a2a] hover:text-white disabled:opacity-40 disabled:hover:border-[#1a1a1a] disabled:hover:text-[#666]"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Export CSV
+                  </button>
+                </div>
+                <p className="mb-5 text-[13px] text-[#555]">
                   Track all admin actions in this box.
                   {logsTotal > 0 && (
                     <span className="ml-2 text-[#444]">
@@ -735,6 +796,43 @@ export function BoxAdminClient({
                     </span>
                   )}
                 </p>
+
+                {/* Search & filter bar */}
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#444]" />
+                    <input
+                      value={logSearch}
+                      onChange={(e) => setLogSearch(e.target.value)}
+                      placeholder="Search by actor or action..."
+                      className="h-9 w-full rounded-[8px] border border-[#1a1a1a] bg-[#0a0a0a] pl-9 pr-3 text-[13px] text-white placeholder:text-[#444] focus:border-[#276ef1] focus:outline-none"
+                    />
+                  </div>
+                  <select
+                    value={logActionFilter}
+                    onChange={(e) => setLogActionFilter(e.target.value)}
+                    className="h-9 rounded-[8px] border border-[#1a1a1a] bg-[#0a0a0a] px-3 text-[13px] text-white focus:border-[#276ef1] focus:outline-none"
+                  >
+                    <option value="all">All actions</option>
+                    <option value="role_changed">Role changed</option>
+                    <option value="member_removed">Member removed</option>
+                    <option value="member_invited">Member invited</option>
+                    <option value="channel_created">Channel created</option>
+                    <option value="channel_deleted">Channel deleted</option>
+                    <option value="channel_archived">Channel archived</option>
+                    <option value="settings_updated">Settings updated</option>
+                  </select>
+                  <select
+                    value={logDateFilter}
+                    onChange={(e) => setLogDateFilter(e.target.value)}
+                    className="h-9 rounded-[8px] border border-[#1a1a1a] bg-[#0a0a0a] px-3 text-[13px] text-white focus:border-[#276ef1] focus:outline-none"
+                  >
+                    <option value="all">All time</option>
+                    <option value="24h">Last 24 hours</option>
+                    <option value="7d">Last 7 days</option>
+                    <option value="30d">Last 30 days</option>
+                  </select>
+                </div>
 
                 {logsLoading && logs.length === 0 ? (
                   <div className="flex flex-col items-center gap-3 py-16">
@@ -753,9 +851,19 @@ export function BoxAdminClient({
                       Admin actions will be recorded here as they happen.
                     </p>
                   </div>
+                ) : filteredLogs.length === 0 ? (
+                  <div className="rounded-[12px] border border-dashed border-[#222] py-12 text-center">
+                    <Search className="mx-auto mb-3 h-8 w-8 text-[#333]" />
+                    <p className="text-[14px] font-medium text-[#666]">
+                      No logs match your filters
+                    </p>
+                    <p className="mt-1 text-[13px] text-[#444]">
+                      Try adjusting your search or filter criteria.
+                    </p>
+                  </div>
                 ) : (
                   <div className="space-y-1">
-                    {logs.map((log) => (
+                    {filteredLogs.map((log) => (
                       <div
                         key={log.id}
                         className="flex items-start gap-3 rounded-[8px] border border-[#1a1a1a] bg-[#0f0f0f] px-4 py-3"

@@ -97,6 +97,8 @@ export function Avatar({
             statusSizeStyles[size],
             statusColors[status]
           )}
+          aria-label={`Status: ${status}`}
+          title={`Status: ${status}`}
         />
       )}
     </div>

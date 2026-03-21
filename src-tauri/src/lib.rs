@@ -4,6 +4,8 @@ mod tray;
 
 use sidecar::SidecarState;
 use tauri::Manager;
+use tauri::utils::{WindowEffect, WindowEffectState};
+use tauri::utils::config::WindowEffectsConfig;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -48,6 +50,16 @@ pub fn run() {
             // Set up system tray
             if let Err(e) = tray::setup_tray(&handle) {
                 eprintln!("Tray setup error: {}", e);
+            }
+
+            // Apply Liquid Glass vibrancy effect
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_effects(WindowEffectsConfig {
+                    effects: vec![WindowEffect::UnderWindowBackground],
+                    state: Some(WindowEffectState::FollowsWindowActiveState),
+                    radius: None,
+                    color: None,
+                });
             }
 
             // In production, wait for the sidecar and navigate to it

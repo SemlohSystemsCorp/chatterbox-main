@@ -153,6 +153,18 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     setUnreadCount((prev) => Math.max(0, prev - ids.length));
   }
 
+  async function markUnread(ids: string[]) {
+    await fetch("/api/notifications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notification_ids: ids, unread: true }),
+    });
+    setNotifications((prev) =>
+      prev.map((n) => (ids.includes(n.id) ? { ...n, read: false } : n))
+    );
+    setUnreadCount((prev) => prev + ids.length);
+  }
+
   async function summarizeNotifications() {
     setSummaryView(true);
     setSummaryLoading(true);
@@ -317,7 +329,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                   <button
                     key={n.id}
                     onClick={() => handleNotificationClick(n)}
-                    className={`flex w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-[#1a1a1a]/60 ${
+                    className={`group flex w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-[#1a1a1a]/60 ${
                       !n.read ? "bg-[#1a1a1a]/30" : ""
                     }`}
                   >
@@ -363,10 +375,24 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                           {!n.read && (
                             <div className="h-1.5 w-1.5 rounded-full bg-[#3b82f6]" />
                           )}
+                          {n.read && (
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                markUnread([n.id]);
+                              }}
+                              className="flex h-4 w-4 items-center justify-center rounded-full text-[#444] opacity-0 transition-opacity hover:text-[#3b82f6] group-hover:opacity-100"
+                              title="Mark as unread"
+                            >
+                              <svg className="h-2.5 w-2.5" viewBox="0 0 10 10" fill="currentColor"><circle cx="5" cy="5" r="5" /></svg>
+                            </span>
+                          )}
                         </div>
                       </div>
                       {n.body && (
-                        <p className="mt-0.5 line-clamp-1 text-[12px] text-[#555]">
+                        <p className="mt-0.5 line-clamp-2 text-[12px] text-[#555]">
                           {n.body}
                         </p>
                       )}

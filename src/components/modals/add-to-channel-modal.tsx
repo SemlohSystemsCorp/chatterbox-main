@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { XIcon as X, SearchIcon as Search, CheckIcon as Check, PersonAddIcon as UserPlus, LockIcon as Lock, TrophyIcon as Crown, ShieldIcon as Shield } from "@primer/octicons-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 interface MemberData {
   user_id: string;
@@ -53,6 +54,7 @@ export function AddToChannelModal({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [adding, setAdding] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [removeConfirmUser, setRemoveConfirmUser] = useState<ChannelMemberData | null>(null);
   const [tab, setTab] = useState<"add" | "current">("add");
   const searchRef = useRef<HTMLInputElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -334,7 +336,7 @@ export function AddToChannelModal({
                         </div>
                       </div>
                       <button
-                        onClick={() => handleRemove(member.user_id)}
+                        onClick={() => setRemoveConfirmUser(member)}
                         disabled={removing === member.user_id}
                         className="rounded-[6px] px-2 py-1 text-[11px] text-[#555] opacity-0 transition-all hover:bg-[#2a1520] hover:text-[#de1135] group-hover:opacity-100 disabled:opacity-50"
                       >
@@ -378,6 +380,21 @@ export function AddToChannelModal({
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={removeConfirmUser !== null}
+        onClose={() => setRemoveConfirmUser(null)}
+        onConfirm={() => {
+          if (removeConfirmUser) {
+            handleRemove(removeConfirmUser.user_id);
+            setRemoveConfirmUser(null);
+          }
+        }}
+        title={`Remove ${removeConfirmUser?.full_name || removeConfirmUser?.email || "member"}?`}
+        description={`They will be removed from #${channelName} and won't be able to see messages until re-added.`}
+        confirmLabel="Remove"
+        confirmVariant="danger"
+      />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { BoxSwitcher } from "@/components/chat/box-switcher";
 import { UserPopover } from "@/components/chat/user-popover";
 import { createClient } from "@/lib/supabase/client";
 import { useContactNames } from "@/hooks/use-contact-names";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import type {
   BoxData,
   SidebarChannel,
@@ -97,6 +98,7 @@ export function ChatSidebar({
   // Channel context menu
   const [channelMenu, setChannelMenu] = useState<{ channelId: string; x: number; y: number } | null>(null);
   const channelMenuRef = useRef<HTMLDivElement>(null);
+  const [leaveConfirm, setLeaveConfirm] = useState<{ channelId: string; channelName: string } | null>(null);
 
   useEffect(() => {
     if (!channelMenu) return;
@@ -185,7 +187,7 @@ export function ChatSidebar({
       ) : (
         <div className="flex h-14 items-center gap-2 border-b border-[#1a1a1a] px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-[4px] bg-white">
+            <div className="logo-glass flex h-6 w-6 items-center justify-center rounded-[4px] bg-white">
               <MessageSquare className="h-3.5 w-3.5 text-black" />
             </div>
             <span className="text-[14px] font-semibold text-white">
@@ -557,11 +559,9 @@ export function ChatSidebar({
             {ch.name !== "general" && (
               <div className="border-t border-[#1a1a1a] py-1">
                 <button
-                  onClick={async () => {
+                  onClick={() => {
                     setChannelMenu(null);
-                    if (!confirm(`Leave #${ch.name}?`)) return;
-                    await fetch(`/api/channels/${ch.id}/leave`, { method: "POST" });
-                    router.push(`/box/${box.short_id}`);
+                    setLeaveConfirm({ channelId: ch.id, channelName: ch.name });
                   }}
                   className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-[#de1135] transition-colors hover:bg-[#1a1a1a]"
                 >
@@ -573,6 +573,21 @@ export function ChatSidebar({
           </div>
         );
       })()}
+      <ConfirmModal
+        open={leaveConfirm !== null}
+        onClose={() => setLeaveConfirm(null)}
+        onConfirm={async () => {
+          if (!leaveConfirm) return;
+          const channelId = leaveConfirm.channelId;
+          setLeaveConfirm(null);
+          await fetch(`/api/channels/${channelId}/leave`, { method: "POST" });
+          router.push(`/box/${box!.short_id}`);
+        }}
+        title={`Leave #${leaveConfirm?.channelName || "channel"}?`}
+        description="You'll need to be re-invited to rejoin this channel."
+        confirmLabel="Leave"
+        confirmVariant="danger"
+      />
     </div>
   );
 }

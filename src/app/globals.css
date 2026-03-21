@@ -41,6 +41,17 @@
   to { opacity: 1; transform: scale(1); }
 }
 
+/* ── Settings save indicator ── */
+
+@keyframes settings-fade-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.settings-indicator-enter {
+  animation: settings-fade-in 0.2s ease-out;
+}
+
 /* ── Scrollbar ── */
 
 * {
@@ -63,110 +74,304 @@
 }
 
 /* ── Light theme color overrides ──
-   Remap the most common hardcoded dark-mode Tailwind classes
-   so all existing components work without individual edits. */
+
+   WHY !important: The app was built dark-first with hardcoded Tailwind classes
+   like bg-[#0a0a0a], text-white, border-[#1a1a1a] across hundreds of components.
+   A full refactor to CSS variables would touch every component file. Instead, we
+   remap dark-mode classes to light equivalents here using !important overrides.
+
+   The CSS variables (--cb-bg, --cb-text, etc.) are defined above and used where
+   possible. New components should prefer var(--cb-*) over hardcoded hex values.
+
+   Sections:
+   1. Backgrounds — page, panel, and surface colors
+   2. White/black inversions — accent elements that flip in light mode
+   3. Text — all text color remappings
+   4. Borders & dividers
+   5. Hover states
+   6. Focus states
+   7. Group-hover states
+   8. Placeholder text
+   9. Shadows & overlays
+   10. Opacity-based white overlays (white/[0.0x] → black/[0.0x])
+   11. Component-specific overrides
+*/
 
 [data-theme="light"] {
-  /* Backgrounds */
-  .bg-\[\#0a0a0a\] { background-color: #ffffff !important; }
-  .bg-\[\#0a0a0a\]\/80 { background-color: rgb(255 255 255 / 0.8) !important; }
-  .bg-\[\#111\] { background-color: #f7f7f8 !important; }
-  .bg-\[\#0f0f0f\] { background-color: #f5f5f5 !important; }
-  .bg-\[\#0d0d0d\] { background-color: #f5f5f5 !important; }
-  .bg-\[\#1a1a1a\] { background-color: #eeeeee !important; }
-  .bg-\[\#141414\] { background-color: #f0f0f0 !important; }
-  .bg-\[\#131313\] { background-color: #f2f2f2 !important; }
-  .bg-\[\#222\] { background-color: #e5e5e5 !important; }
-  .bg-black { background-color: #ffffff !important; }
-  .bg-black\/60 { background-color: rgb(0 0 0 / 0.3) !important; }
 
-  /* Text */
-  .text-white { color: #111111 !important; }
-  .text-\[\#dcddde\] { color: #333333 !important; }
-  .text-\[\#ddd\] { color: #333333 !important; }
-  .text-\[\#ccc\] { color: #444444 !important; }
-  .text-\[\#999\] { color: #666666 !important; }
-  .text-\[\#888\] { color: #666666 !important; }
-  .text-\[\#777\] { color: #777777 !important; }
-  .text-\[\#666\] { color: #888888 !important; }
-  .text-\[\#555\] { color: #999999 !important; }
-  .text-\[\#444\] { color: #bbbbbb !important; }
-  .text-\[\#333\] { color: #cccccc !important; }
+  /* ────────────────────────────────────────────────────
+     1. BACKGROUNDS — page, panel, and surface colors
+     Map dark grays to light equivalents.
+     Uses CSS variables where a direct mapping exists.
+     ──────────────────────────────────────────────────── */
 
-  /* Borders */
-  .border-\[\#1a1a1a\] { border-color: #e2e2e2 !important; }
-  .border-\[\#2a2a2a\] { border-color: #d0d0d0 !important; }
-  .border-\[\#222\] { border-color: #ddd !important; }
-  .border-white\/\[0\.06\] { border-color: rgb(0 0 0 / 0.06) !important; }
+  .bg-\[\#0a0a0a\]   { background-color: var(--cb-bg) !important; }           /* #fff — primary page bg */
+  .bg-\[\#0a0a0a\]\/80 { background-color: rgb(255 255 255 / 0.8) !important; } /* translucent nav bg */
+  .bg-\[\#0d0d0d\]   { background-color: #f5f5f5 !important; }
+  .bg-\[\#0f0f0f\]   { background-color: #f5f5f5 !important; }
+  .bg-\[\#111\]       { background-color: var(--cb-bg-secondary) !important; }  /* #f7f7f8 — secondary panels */
+  .bg-\[\#131313\]   { background-color: #f2f2f2 !important; }
+  .bg-\[\#141414\]   { background-color: var(--cb-bg-hover) !important; }       /* #f0f0f0 — subtle hover bg */
+  .bg-\[\#1a1a1a\]   { background-color: var(--cb-bg-tertiary) !important; }    /* #eee — tertiary surfaces */
+  .bg-\[\#222\]       { background-color: #e5e5e5 !important; }
+  .bg-\[\#252525\]   { background-color: #e0e0e0 !important; }
+  .bg-\[\#2a2a2a\]   { background-color: #dadada !important; }
+  .bg-\[\#333\]       { background-color: #d0d0d0 !important; }
+  .bg-\[\#444\]       { background-color: #c8c8c8 !important; }
+  .bg-\[\#555\]       { background-color: #bbb !important; }
+  .bg-\[\#666\]       { background-color: #aaa !important; }
+  .bg-black           { background-color: var(--cb-bg) !important; }            /* #fff */
+  .bg-black\/60       { background-color: rgb(0 0 0 / 0.3) !important; }       /* modal backdrop — less opaque */
 
-  /* Hover states */
-  .hover\:bg-\[\#111\]:hover { background-color: #f0f0f0 !important; }
-  .hover\:bg-\[\#1a1a1a\]:hover { background-color: #e8e8e8 !important; }
-  .hover\:bg-\[\#141414\]:hover { background-color: #ededed !important; }
-  .hover\:bg-white\/\[0\.04\]:hover { background-color: rgb(0 0 0 / 0.04) !important; }
-  .hover\:text-white:hover { color: #111111 !important; }
-  .hover\:text-\[\#aaa\]:hover { color: #555555 !important; }
-  .hover\:text-\[\#888\]:hover { color: #555555 !important; }
-  .hover\:border-\[\#2a2a2a\]:hover { border-color: #d0d0d0 !important; }
-  .hover\:border-\[\#333\]:hover { border-color: #ccc !important; }
+  /* ────────────────────────────────────────────────────
+     2. WHITE/BLACK INVERSIONS
+     bg-white elements are accent surfaces (avatars, buttons,
+     icons) that should become dark in light mode. text-black
+     is their label text and should become white.
+     ──────────────────────────────────────────────────── */
 
-  /* Focus states */
-  .focus\:border-white:focus { border-color: #111111 !important; }
-  .focus\:bg-\[\#222\]:focus { background-color: #e8e8e8 !important; }
-  .focus-within\:border-\[\#2a2a2a\]:focus-within { border-color: #d0d0d0 !important; }
-  .focus-within\:border-white:focus-within { border-color: #111 !important; }
-
-  /* Specific components */
-  .bg-white { background-color: #111111 !important; }
+  .bg-white           { background-color: var(--cb-text) !important; }          /* #111 — inverted accent bg */
   .bg-white .text-black,
   .bg-white .text-\[\#111\] { color: #ffffff !important; }
-  .hover\:bg-\[\#e0e0e0\]:hover { background-color: #2a2a2a !important; }
-  .hover\:bg-\[\#e8e8e8\]:hover { background-color: #2a2a2a !important; }
-  .text-black { color: #ffffff !important; }
+  .text-black         { color: #ffffff !important; }
 
-  /* Button whites → dark buttons in light mode */
+  /* Buttons and links with bg-white get explicit hover treatment */
   button.bg-white,
   a.bg-white {
-    background-color: #111111 !important;
+    background-color: var(--cb-text) !important;
     color: #ffffff !important;
   }
   button.bg-white:hover,
   a.bg-white:hover {
     background-color: #2a2a2a !important;
   }
+  .hover\:bg-white:hover { background-color: #2a2a2a !important; }
 
-  /* Inline code */
-  .bg-\[\#1a1a1a\] code { background-color: #e8e8e8 !important; }
+  /* Light-mode hover targets that are already light in dark mode stay inverted */
+  .hover\:bg-\[\#e0e0e0\]:hover { background-color: #2a2a2a !important; }
+  .hover\:bg-\[\#e8e8e8\]:hover { background-color: #2a2a2a !important; }
+  .hover\:bg-\[\#e5e5e5\]:hover { background-color: #2a2a2a !important; }
+  .hover\:bg-\[\#ddd\]:hover     { background-color: #333 !important; }
 
-  /* Placeholder text */
+  /* ────────────────────────────────────────────────────
+     3. TEXT — remap light-on-dark text to dark-on-light.
+     Ordered brightest → dimmest. Uses CSS variables for
+     the most common mappings.
+     ──────────────────────────────────────────────────── */
+
+  .text-white         { color: var(--cb-text) !important; }                     /* #111 */
+  .text-white\/70     { color: rgb(17 17 17 / 0.7) !important; }
+  .text-\[\#dcddde\]  { color: var(--cb-text-secondary) !important; }           /* #333 */
+  .text-\[\#ddd\]     { color: var(--cb-text-secondary) !important; }           /* #333 */
+  .text-\[\#ccc\]     { color: #444444 !important; }
+  .text-\[\#aaa\]     { color: #555555 !important; }
+  .text-\[\#999\]     { color: var(--cb-text-muted) !important; }               /* #666 */
+  .text-\[\#888\]     { color: var(--cb-text-muted) !important; }               /* #666 */
+  .text-\[\#777\]     { color: #777777 !important; }
+  .text-\[\#666\]     { color: #888888 !important; }
+  .text-\[\#555\]     { color: var(--cb-text-faint) !important; }               /* #999 */
+  .text-\[\#444\]     { color: #bbbbbb !important; }
+  .text-\[\#333\]     { color: #cccccc !important; }
+  .text-\[\#222\]     { color: #dddddd !important; }
+  .text-\[\#1a1a1a\]  { color: #eeeeee !important; }                            /* large muted footer text */
+
+  /* ────────────────────────────────────────────────────
+     4. BORDERS & DIVIDERS
+     ──────────────────────────────────────────────────── */
+
+  .border-\[\#0a0a0a\]  { border-color: var(--cb-bg) !important; }              /* status indicator outline */
+  .border-\[\#0f0f0f\]  { border-color: #f0f0f0 !important; }
+  .border-\[\#111\]     { border-color: #ebebeb !important; }
+  .border-\[\#1a1a1a\]  { border-color: var(--cb-border) !important; }           /* #e2e2e2 — most common border */
+  .border-\[\#222\]     { border-color: #ddd !important; }
+  .border-\[\#2a2a2a\]  { border-color: #d0d0d0 !important; }
+  .border-\[\#333\]     { border-color: #ccc !important; }
+  .border-\[\#444\]     { border-color: #bbb !important; }
+  .border-\[\#555\]     { border-color: #aaa !important; }
+  .border-white          { border-color: var(--cb-text) !important; }            /* #111 — inverted */
+  .border-white\/\[0\.06\] { border-color: rgb(0 0 0 / 0.06) !important; }
+  .divide-\[\#1a1a1a\] > :not(:first-child) { border-color: var(--cb-border) !important; }
+
+  /* ────────────────────────────────────────────────────
+     5. HOVER STATES — backgrounds, text, borders
+     ──────────────────────────────────────────────────── */
+
+  /* Hover backgrounds */
+  .hover\:bg-\[\#0f0f0f\]:hover  { background-color: #f0f0f0 !important; }
+  .hover\:bg-\[\#111\]:hover     { background-color: var(--cb-bg-hover) !important; }  /* #f0f0f0 */
+  .hover\:bg-\[\#131313\]:hover  { background-color: #ededed !important; }
+  .hover\:bg-\[\#141414\]:hover  { background-color: #ededed !important; }
+  .hover\:bg-\[\#1a1a1a\]:hover  { background-color: #e8e8e8 !important; }
+  .hover\:bg-\[\#222\]:hover     { background-color: #e0e0e0 !important; }
+  .hover\:bg-\[\#252525\]:hover  { background-color: #dadada !important; }
+  .hover\:bg-\[\#333\]:hover     { background-color: #d0d0d0 !important; }
+  .hover\:bg-white\/\[0\.04\]:hover { background-color: rgb(0 0 0 / 0.04) !important; }
+
+  /* Hover text */
+  .hover\:text-white:hover       { color: var(--cb-text) !important; }           /* #111 */
+  .hover\:text-\[\#ccc\]:hover   { color: #444 !important; }
+  .hover\:text-\[\#aaa\]:hover   { color: #555555 !important; }
+  .hover\:text-\[\#999\]:hover   { color: #666 !important; }
+  .hover\:text-\[\#888\]:hover   { color: #555555 !important; }
+  .hover\:text-\[\#666\]:hover   { color: #888 !important; }
+  .hover\:text-\[\#555\]:hover   { color: #999 !important; }
+
+  /* Hover borders */
+  .hover\:border-\[\#2a2a2a\]:hover { border-color: #d0d0d0 !important; }
+  .hover\:border-\[\#333\]:hover    { border-color: #ccc !important; }
+  .hover\:border-white:hover        { border-color: var(--cb-text) !important; } /* #111 */
+
+  /* ────────────────────────────────────────────────────
+     6. FOCUS STATES
+     ──────────────────────────────────────────────────── */
+
+  .focus\:border-white:focus     { border-color: var(--cb-text) !important; }    /* #111 */
+  .focus\:border-\[\#333\]:focus { border-color: #ccc !important; }
+  .focus\:border-\[\#444\]:focus { border-color: #bbb !important; }
+  .focus\:border-\[\#2a2a2a\]:focus { border-color: #d0d0d0 !important; }
+  .focus\:bg-\[\#222\]:focus     { background-color: #e8e8e8 !important; }
+  .focus-within\:border-\[\#2a2a2a\]:focus-within { border-color: #d0d0d0 !important; }
+  .focus-within\:border-\[\#444\]:focus-within    { border-color: #bbb !important; }
+  .focus-within\:border-white:focus-within        { border-color: var(--cb-text) !important; }
+
+  /* ────────────────────────────────────────────────────
+     7. GROUP-HOVER STATES
+     Tailwind generates: .group:hover .group-hover\:class
+     We nest inside [data-theme="light"] so both selectors
+     must be descendants of the theme root.
+     ──────────────────────────────────────────────────── */
+
+  .group:hover .group-hover\:text-\[\#888\] { color: #666 !important; }
+  .group:hover .group-hover\:text-\[\#666\] { color: #888 !important; }
+  .group:hover .group-hover\:text-\[\#555\] { color: #999 !important; }
+
+  /* ────────────────────────────────────────────────────
+     8. PLACEHOLDER TEXT
+     ──────────────────────────────────────────────────── */
+
+  .placeholder\:text-\[\#333\]::placeholder { color: #bbb !important; }
+  .placeholder\:text-\[\#444\]::placeholder { color: #aaa !important; }
   .placeholder\:text-\[\#555\]::placeholder { color: #aaa !important; }
-  .placeholder\:text-\[\#666\]::placeholder { color: #aaa !important; }
+  .placeholder\:text-\[\#666\]::placeholder { color: #999 !important; }
 
-  /* Shadows */
-  .shadow-\[0_8px_32px_rgba\(0\,0\,0\,0\.5\)\] { box-shadow: 0 8px 32px rgba(0,0,0,0.1) !important; }
-  .shadow-\[0_16px_64px_rgba\(0\,0\,0\,0\.6\)\] { box-shadow: 0 16px 64px rgba(0,0,0,0.1) !important; }
-  .shadow-\[0_16px_64px_rgba\(0\,0\,0\,0\.5\)\] { box-shadow: 0 16px 64px rgba(0,0,0,0.1) !important; }
+  /* ────────────────────────────────────────────────────
+     9. SHADOWS & OVERLAYS
+     Dark mode uses heavy shadows; light mode uses subtle ones.
+     ──────────────────────────────────────────────────── */
+
+  .shadow-\[0_4px_12px_rgba\(0\,0\,0\,0\.4\)\]  { box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important; }
+  .shadow-\[0_8px_32px_rgba\(0\,0\,0\,0\.5\)\]  { box-shadow: 0 8px 32px rgba(0,0,0,0.08) !important; }
+  .shadow-\[0_16px_64px_rgba\(0\,0\,0\,0\.5\)\] { box-shadow: 0 16px 64px rgba(0,0,0,0.08) !important; }
+  .shadow-\[0_16px_64px_rgba\(0\,0\,0\,0\.6\)\] { box-shadow: 0 16px 64px rgba(0,0,0,0.08) !important; }
+  .shadow-\[0_20px_80px_-20px_rgba\(0\,0\,0\,0\.8\)\] { box-shadow: 0 20px 80px -20px rgba(0,0,0,0.12) !important; }
   .shadow-lg { box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important; }
+  .shadow-\[0_0_0_2px_\#0a0a0a\] { box-shadow: 0 0 0 2px #ffffff !important; } /* ring-style shadows */
 
-  /* Tooltips */
+  /* ────────────────────────────────────────────────────
+     10. OPACITY-BASED WHITE OVERLAYS
+     Dark mode uses white-at-low-opacity for subtle surfaces
+     on dark backgrounds. In light mode, flip to black-at-
+     low-opacity for the same effect on light backgrounds.
+     ──────────────────────────────────────────────────── */
+
+  .bg-white\/\[0\.02\] { background-color: rgb(0 0 0 / 0.02) !important; }
+  .bg-white\/\[0\.03\] { background-color: rgb(0 0 0 / 0.03) !important; }
+  .bg-white\/\[0\.04\] { background-color: rgb(0 0 0 / 0.04) !important; }
+  .bg-white\/\[0\.06\] { background-color: rgb(0 0 0 / 0.06) !important; }
+  .bg-white\/15         { background-color: rgb(0 0 0 / 0.08) !important; }
+
+  /* ────────────────────────────────────────────────────
+     11. COMPONENT-SPECIFIC OVERRIDES
+     ──────────────────────────────────────────────────── */
+
+  /* Inline code blocks inside surfaces */
+  .bg-\[\#1a1a1a\] code { background-color: #e0e0e0 !important; }
+
+  /* Markdown code blocks — syntax highlighting */
+  code.text-\[\#e06c75\] { color: #c0392b !important; }
+
+  /* Tooltips stay dark in light mode for contrast */
   [role="tooltip"] {
     background-color: #333 !important;
     border-color: #444 !important;
     color: #fff !important;
   }
 
-  /* Stroke for presence dots */
-  .stroke-\[\#0a0a0a\] { stroke: #ffffff !important; }
-
-  /* Status indicator border */
-  .border-\[\#0a0a0a\] { border-color: #ffffff !important; }
-
-  /* Markdown code blocks */
-  code.text-\[\#e06c75\] { color: #c0392b !important; }
+  /* Presence dot stroke matches page background */
+  .stroke-\[\#0a0a0a\] { stroke: var(--cb-bg) !important; }
 
   /* Search highlight */
   mark.bg-white\/15 { background-color: rgb(39 110 241 / 0.15) !important; }
+}
 
-  /* Large muted text in footer */
-  .text-\[\#1a1a1a\] { color: #eeeeee !important; }
+/* ── Tauri desktop vibrancy (Liquid Glass) ──
+   When running inside the Tauri shell with window-level vibrancy,
+   make layout backgrounds transparent so the native blur shows through. */
+
+[data-tauri] body {
+  background: transparent !important;
+}
+
+/* Full-page layout containers */
+[data-tauri] .h-screen.bg-\[\#0a0a0a\],
+[data-tauri] .min-h-screen.bg-\[\#0a0a0a\] {
+  background-color: transparent !important;
+}
+
+/* Sidebar panels — semi-transparent for frosted glass depth */
+[data-tauri] aside.bg-\[\#0a0a0a\],
+[data-tauri] .w-\[240px\].border-r.bg-\[\#0a0a0a\] {
+  background-color: rgba(10, 10, 10, 0.55) !important;
+}
+
+/* Sidebar secondary backgrounds */
+[data-tauri] aside .bg-\[\#141414\],
+[data-tauri] .w-\[240px\] .bg-\[\#141414\] {
+  background-color: rgba(20, 20, 20, 0.4) !important;
+}
+
+/* Active/hover states in sidebars */
+[data-tauri] aside .bg-\[\#1a1a1a\],
+[data-tauri] .w-\[240px\] .bg-\[\#1a1a1a\] {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-tauri] aside .hover\:bg-\[\#111\]:hover,
+[data-tauri] .w-\[240px\] .hover\:bg-\[\#111\]:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Sidebar borders — softer for glass */
+[data-tauri] aside.border-r,
+[data-tauri] .w-\[240px\].border-r {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-tauri] aside .border-b,
+[data-tauri] .w-\[240px\] .border-b,
+[data-tauri] .w-\[240px\] .border-t {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Marketing nav — glass blur */
+[data-tauri] .bg-\[\#0a0a0a\]\/80 {
+  background-color: rgba(10, 10, 10, 0.4) !important;
+}
+
+/* App logo — frosted glass */
+[data-tauri] .logo-glass {
+  background: rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15), inset 0 0.5px 0 rgba(255, 255, 255, 0.25);
+}
+
+[data-tauri] .logo-glass > svg {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Presence dot stroke matches transparent bg */
+[data-tauri] .stroke-\[\#0a0a0a\] {
+  stroke: transparent !important;
 }

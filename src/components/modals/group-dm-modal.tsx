@@ -257,7 +257,7 @@ export function GroupDmModal({
         <div className="flex items-center justify-between border-t border-[#1a1a1a] px-5 py-3">
           <div className="flex items-center gap-1.5 text-[12px] text-[#555]">
             <Users className="h-3.5 w-3.5" />
-            {selected.length + 1} members
+            {selected.length} selected
           </div>
           <div className="flex items-center gap-2">
             <Button type="button" variant="secondary" size="sm" onClick={onClose}>

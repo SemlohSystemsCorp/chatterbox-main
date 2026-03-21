@@ -21,6 +21,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Validate emoji - must be either:
+  // 1. A valid Unicode emoji (1-8 characters from emoji ranges)
+  // 2. A shortcode like :thumbsup: (common in chat apps)
+  const EMOJI_REGEX = /^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F){1,5}$/u;
+  const SHORTCODE_REGEX = /^:[a-z0-9_+-]+:$/;
+
+  if (!EMOJI_REGEX.test(emoji) && !SHORTCODE_REGEX.test(emoji)) {
+    return NextResponse.json(
+      { error: "Invalid emoji format" },
+      { status: 400 }
+    );
+  }
+
   // Verify the user can access this message's channel or conversation
   const { data: message } = await supabase
     .from("messages")

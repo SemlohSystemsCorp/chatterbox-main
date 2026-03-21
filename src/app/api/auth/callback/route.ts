@@ -49,6 +49,18 @@ export async function GET(request: Request) {
             avatar_url: user.user_metadata?.avatar_url ?? null,
             username: user.email.split("@")[0],
           });
+
+          // Mark new OAuth user as needing onboarding
+          await supabaseAdmin.auth.admin.updateUserById(user.id, {
+            user_metadata: { onboarding_completed: false },
+          });
+
+          // Redirect to onboarding, preserving invite context if present
+          const joinCodeMatch = next.match(/\/join\?code=([^&]+)/);
+          const onboardingPath = joinCodeMatch
+            ? `/onboarding?invite=${encodeURIComponent(joinCodeMatch[1])}`
+            : "/onboarding";
+          return NextResponse.redirect(`${origin}${onboardingPath}`);
         }
       }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeftIcon as ArrowLeft, PersonIcon as User, ShieldIcon as Shield, PaintbrushIcon as Palette, BellIcon as Bell, CommentDiscussionIcon as MessageSquare, LockIcon as Lock, AccessibilityIcon as Accessibility, GlobeIcon as Globe, DeviceCameraVideoIcon as Video, ToolsIcon as Wrench, CheckCircleIcon as Save, CheckIcon as Check, DeviceCameraIcon as Camera, TrashIcon as Trash2 } from "@primer/octicons-react";
@@ -79,6 +79,9 @@ function Toggle({
         )}
       </div>
       <button
+        role="switch"
+        aria-checked={value}
+        aria-label={label}
         onClick={() => onChange(!value)}
         className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
           value ? "bg-[#276ef1]" : "bg-[#333]"
@@ -258,6 +261,112 @@ export function SettingsClient({ user, boxes }: SettingsClientProps) {
     useSettingsStore();
   const [activeSection, setActiveSection] = useState<Section>("profile");
   const [saved, setSaved] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState(false);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Data export
+  const [exportLoading, setExportLoading] = useState(false);
+
+  // Mic/Camera test
+  const [micTesting, setMicTesting] = useState(false);
+  const [micLevel, setMicLevel] = useState(0);
+  const [cameraTesting, setCameraTesting] = useState(false);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const micAnalyserRef = useRef<AnalyserNode | null>(null);
+  const micAnimFrameRef = useRef<number | null>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
+  const videoPreviewRef = useRef<HTMLVideoElement>(null);
+
+  async function startMicTest() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      micStreamRef.current = stream;
+      const audioCtx = new AudioContext();
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      micAnalyserRef.current = analyser;
+      setMicTesting(true);
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      function tick() {
+        analyser.getByteFrequencyData(dataArray);
+        const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+        setMicLevel(Math.min(100, Math.round((avg / 128) * 100)));
+        micAnimFrameRef.current = requestAnimationFrame(tick);
+      }
+      tick();
+    } catch {
+      alert("Could not access microphone. Please check your browser permissions.");
+    }
+  }
+
+  function stopMicTest() {
+    if (micAnimFrameRef.current) cancelAnimationFrame(micAnimFrameRef.current);
+    micStreamRef.current?.getTracks().forEach((t) => t.stop());
+    micStreamRef.current = null;
+    micAnalyserRef.current = null;
+    setMicTesting(false);
+    setMicLevel(0);
+  }
+
+  async function startCameraTest() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      cameraStreamRef.current = stream;
+      setCameraTesting(true);
+      setTimeout(() => {
+        if (videoPreviewRef.current) {
+          videoPreviewRef.current.srcObject = stream;
+        }
+      }, 0);
+    } catch {
+      alert("Could not access camera. Please check your browser permissions.");
+    }
+  }
+
+  function stopCameraTest() {
+    cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
+    cameraStreamRef.current = null;
+    if (videoPreviewRef.current) videoPreviewRef.current.srcObject = null;
+    setCameraTesting(false);
+  }
+
+  // Clean up mic/camera tests on unmount
+  useEffect(() => {
+    return () => {
+      micStreamRef.current?.getTracks().forEach((t) => t.stop());
+      cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
+      if (micAnimFrameRef.current) cancelAnimationFrame(micAnimFrameRef.current);
+    };
+  }, []);
+
+  // Data export handler
+  async function handleDataExport() {
+    setExportLoading(true);
+    try {
+      const res = await fetch("/api/settings/export", { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Failed to export data");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `chatterbox-data-export-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Failed to export data. Please try again.");
+    } finally {
+      setExportLoading(false);
+    }
+  }
 
   // Autostart (desktop only)
   const [autostartEnabled, setAutostartEnabled] = useState(false);
@@ -325,11 +434,55 @@ export function SettingsClient({ user, boxes }: SettingsClientProps) {
     loadFromServer();
   }, [loadFromServer]);
 
+  // Immediate update for toggles, selects, sliders — saves right away
   function update(key: keyof Settings, value: unknown) {
     updateSetting(key, value);
+    setPendingChanges(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   }
+
+  // Debounced update for text inputs — waits 800ms after the user stops typing
+  const debouncedUpdate = useCallback(
+    (key: keyof Settings, value: unknown) => {
+      // Optimistically update local state immediately
+      setSettings({ [key]: value } as Partial<Settings>);
+      setPendingChanges(true);
+      setSaved(false);
+
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        updateSetting(key, value);
+        setPendingChanges(false);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 1500);
+        debounceTimerRef.current = null;
+      }, 800);
+    },
+    [updateSetting, setSettings],
+  );
+
+  // Warn before navigating away while changes are pending or saving
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      if (pendingChanges || saving) {
+        e.preventDefault();
+      }
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [pendingChanges, saving]);
+
+  // Clean up debounce timer on unmount — flush any pending save
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -364,14 +517,25 @@ export function SettingsClient({ user, boxes }: SettingsClientProps) {
         title="Settings"
         actions={
           <div className="flex items-center gap-2">
-            {saved && (
-              <span className="flex items-center gap-1 text-[12px] text-[#22c55e]">
-                <Check className="h-3.5 w-3.5" /> Saved
-              </span>
-            )}
-            {saving && (
-              <span className="text-[12px] text-[#555]">Saving...</span>
-            )}
+            <div className="flex h-5 items-center overflow-hidden">
+              {pendingChanges && (
+                <span className="settings-indicator-enter flex items-center gap-1.5 text-[12px] text-[#f59e0b]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#f59e0b]" />
+                  Unsaved changes
+                </span>
+              )}
+              {!pendingChanges && saving && (
+                <span className="settings-indicator-enter flex items-center gap-1.5 text-[12px] text-[#888]">
+                  <Spinner className="h-3 w-3" />
+                  Saving...
+                </span>
+              )}
+              {!pendingChanges && !saving && saved && (
+                <span className="settings-indicator-enter flex items-center gap-1 text-[12px] text-[#22c55e]">
+                  <Check className="h-3.5 w-3.5" /> Saved
+                </span>
+              )}
+            </div>
             <Link
               href="/dashboard"
               className="flex h-8 items-center gap-1.5 rounded-[8px] px-3 text-[13px] text-[#666] transition-colors hover:bg-[#1a1a1a] hover:text-white"
@@ -462,18 +626,18 @@ export function SettingsClient({ user, boxes }: SettingsClientProps) {
                   </div>
                 </div>
 
-                <TextInput label="Display name" value={settings.display_name} onChange={(v) => update("display_name", v)} placeholder={user.fullName || "Your name"} />
-                <TextArea label="Bio" value={settings.bio} onChange={(v) => update("bio", v)} placeholder="Tell people about yourself" />
-                <TextInput label="Pronouns" value={settings.pronouns} onChange={(v) => update("pronouns", v)} placeholder="e.g. they/them" />
+                <TextInput label="Display name" value={settings.display_name} onChange={(v) => debouncedUpdate("display_name", v)} placeholder={user.fullName || "Your name"} />
+                <TextArea label="Bio" value={settings.bio} onChange={(v) => debouncedUpdate("bio", v)} placeholder="Tell people about yourself" />
+                <TextInput label="Pronouns" value={settings.pronouns} onChange={(v) => debouncedUpdate("pronouns", v)} placeholder="e.g. they/them" />
                 <SectionDivider />
                 <SectionHeader title="Contact" />
-                <TextInput label="Phone number" value={settings.phone} onChange={(v) => update("phone", v)} placeholder="+1 (555) 000-0000" type="tel" />
-                <TextInput label="Location" value={settings.location} onChange={(v) => update("location", v)} placeholder="City, Country" />
-                <TextInput label="Website" value={settings.website} onChange={(v) => update("website", v)} placeholder="https://example.com" type="url" />
+                <TextInput label="Phone number" value={settings.phone} onChange={(v) => debouncedUpdate("phone", v)} placeholder="+1 (555) 000-0000" type="tel" />
+                <TextInput label="Location" value={settings.location} onChange={(v) => debouncedUpdate("location", v)} placeholder="City, Country" />
+                <TextInput label="Website" value={settings.website} onChange={(v) => debouncedUpdate("website", v)} placeholder="https://example.com" type="url" />
                 <SectionDivider />
                 <SectionHeader title="Work" />
-                <TextInput label="Company" value={settings.company} onChange={(v) => update("company", v)} placeholder="Where you work" />
-                <TextInput label="Job title" value={settings.job_title} onChange={(v) => update("job_title", v)} placeholder="What you do" />
+                <TextInput label="Company" value={settings.company} onChange={(v) => debouncedUpdate("company", v)} placeholder="Where you work" />
+                <TextInput label="Job title" value={settings.job_title} onChange={(v) => debouncedUpdate("job_title", v)} placeholder="What you do" />
                 <TextInput label="Birthday" value={settings.birthday} onChange={(v) => update("birthday", v)} type="date" />
               </>
             )}
@@ -500,6 +664,27 @@ export function SettingsClient({ user, boxes }: SettingsClientProps) {
                 <SectionDivider />
                 <SectionHeader title="Data" />
                 <Toggle label="Allow data export" description="Enable downloading a copy of your data" value={settings.allow_data_export} onChange={(v) => update("allow_data_export", v)} />
+                {settings.allow_data_export && (
+                  <div className="py-3">
+                    <div className="text-[12px] text-[#555] mb-2">
+                      Download a JSON file containing all your Chatterbox data including messages, settings, and profile info.
+                    </div>
+                    <button
+                      onClick={handleDataExport}
+                      disabled={exportLoading}
+                      className="flex h-9 items-center gap-2 rounded-[8px] bg-[#1a1a1a] px-4 text-[13px] font-medium text-white transition-colors hover:bg-[#252525] disabled:opacity-50"
+                    >
+                      {exportLoading ? (
+                        <>
+                          <Spinner className="h-3.5 w-3.5" />
+                          Exporting...
+                        </>
+                      ) : (
+                        "Download my data"
+                      )}
+                    </button>
+                  </div>
+                )}
                 <Toggle label="Sync across devices" description="Keep your settings synchronized on all devices" value={settings.sync_across_devices} onChange={(v) => update("sync_across_devices", v)} />
 
                 <SectionDivider />
@@ -528,7 +713,58 @@ export function SettingsClient({ user, boxes }: SettingsClientProps) {
                   { value: "light", label: "Light" },
                   { value: "system", label: "System" },
                 ]} />
-                <TextInput label="Accent color" value={settings.accent_color} onChange={(v) => update("accent_color", v)} placeholder="#276ef1" />
+
+                {/* Theme preview */}
+                <div className="py-3">
+                  <div className="mb-2 text-[12px] text-[#555]">Preview</div>
+                  <div className="flex gap-3">
+                    {(settings.theme === "dark" || settings.theme === "system") && (
+                      <div
+                        className="flex overflow-hidden rounded-[8px] border border-[#333]"
+                        style={{ width: settings.theme === "system" ? 60 : 120, height: 80 }}
+                      >
+                        {/* Dark sidebar */}
+                        <div style={{ width: "30%", backgroundColor: "#111", borderRight: "1px solid #222" }}>
+                          <div style={{ margin: "6px 4px", height: 4, borderRadius: 2, backgroundColor: "#333" }} />
+                          <div style={{ margin: "4px 4px", height: 3, borderRadius: 2, backgroundColor: "#222" }} />
+                          <div style={{ margin: "4px 4px", height: 3, borderRadius: 2, backgroundColor: "#222" }} />
+                        </div>
+                        {/* Dark main area */}
+                        <div style={{ flex: 1, backgroundColor: "#0a0a0a", padding: "6px 5px" }}>
+                          <div style={{ height: 4, width: "80%", borderRadius: 2, backgroundColor: "#e0e0e0", marginBottom: 4 }} />
+                          <div style={{ height: 3, width: "60%", borderRadius: 2, backgroundColor: "#555", marginBottom: 3 }} />
+                          <div style={{ height: 3, width: "70%", borderRadius: 2, backgroundColor: "#555" }} />
+                        </div>
+                      </div>
+                    )}
+                    {(settings.theme === "light" || settings.theme === "system") && (
+                      <div
+                        className="flex overflow-hidden rounded-[8px] border border-[#ccc]"
+                        style={{ width: settings.theme === "system" ? 60 : 120, height: 80 }}
+                      >
+                        {/* Light sidebar */}
+                        <div style={{ width: "30%", backgroundColor: "#f0f0f0", borderRight: "1px solid #ddd" }}>
+                          <div style={{ margin: "6px 4px", height: 4, borderRadius: 2, backgroundColor: "#ccc" }} />
+                          <div style={{ margin: "4px 4px", height: 3, borderRadius: 2, backgroundColor: "#ddd" }} />
+                          <div style={{ margin: "4px 4px", height: 3, borderRadius: 2, backgroundColor: "#ddd" }} />
+                        </div>
+                        {/* Light main area */}
+                        <div style={{ flex: 1, backgroundColor: "#ffffff", padding: "6px 5px" }}>
+                          <div style={{ height: 4, width: "80%", borderRadius: 2, backgroundColor: "#1a1a1a", marginBottom: 4 }} />
+                          <div style={{ height: 3, width: "60%", borderRadius: 2, backgroundColor: "#999", marginBottom: 3 }} />
+                          <div style={{ height: 3, width: "70%", borderRadius: 2, backgroundColor: "#999" }} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-1.5 text-[11px] text-[#444]">
+                    {settings.theme === "dark" && "Dark theme"}
+                    {settings.theme === "light" && "Light theme"}
+                    {settings.theme === "system" && "Follows your system preference"}
+                  </div>
+                </div>
+
+                <TextInput label="Accent color" value={settings.accent_color} onChange={(v) => debouncedUpdate("accent_color", v)} placeholder="#276ef1" />
                 <Select label="Font size" value={settings.font_size} onChange={(v) => update("font_size", v)} options={[
                   { value: "small", label: "Small" },
                   { value: "medium", label: "Medium" },
@@ -608,8 +844,8 @@ export function SettingsClient({ user, boxes }: SettingsClientProps) {
                   <>
                     <TextInput label="Start time" value={settings.notification_schedule_start} onChange={(v) => update("notification_schedule_start", v)} type="time" />
                     <TextInput label="End time" value={settings.notification_schedule_end} onChange={(v) => update("notification_schedule_end", v)} type="time" />
-                    <TextInput label="Timezone" value={settings.notification_schedule_timezone} onChange={(v) => update("notification_schedule_timezone", v)} placeholder="UTC" />
-                    <TextInput label="Days" description="Comma-separated: mon,tue,wed,thu,fri" value={settings.notification_schedule_days} onChange={(v) => update("notification_schedule_days", v)} />
+                    <TextInput label="Timezone" value={settings.notification_schedule_timezone} onChange={(v) => debouncedUpdate("notification_schedule_timezone", v)} placeholder="UTC" />
+                    <TextInput label="Days" description="Comma-separated: mon,tue,wed,thu,fri" value={settings.notification_schedule_days} onChange={(v) => debouncedUpdate("notification_schedule_days", v)} />
                   </>
                 )}
               </>
@@ -752,7 +988,7 @@ export function SettingsClient({ user, boxes }: SettingsClientProps) {
                   { value: "pl", label: "Polski" },
                   { value: "tr", label: "T\u00fcrk\u00e7e" },
                 ]} />
-                <TextInput label="Timezone" value={settings.timezone} onChange={(v) => update("timezone", v)} placeholder="UTC" />
+                <TextInput label="Timezone" value={settings.timezone} onChange={(v) => debouncedUpdate("timezone", v)} placeholder="UTC" />
                 <Select label="Date format" value={settings.date_format} onChange={(v) => update("date_format", v)} options={[
                   { value: "MMM d, yyyy", label: "Jan 1, 2025" },
                   { value: "d MMM yyyy", label: "1 Jan 2025" },
@@ -769,8 +1005,8 @@ export function SettingsClient({ user, boxes }: SettingsClientProps) {
                   { value: "monday", label: "Monday" },
                   { value: "saturday", label: "Saturday" },
                 ]} />
-                <TextInput label="Number format" value={settings.number_format} onChange={(v) => update("number_format", v)} placeholder="en-US" />
-                <TextInput label="Spellcheck language" value={settings.spell_check_language} onChange={(v) => update("spell_check_language", v)} placeholder="en" />
+                <TextInput label="Number format" value={settings.number_format} onChange={(v) => debouncedUpdate("number_format", v)} placeholder="en-US" />
+                <TextInput label="Spellcheck language" value={settings.spell_check_language} onChange={(v) => debouncedUpdate("spell_check_language", v)} placeholder="en" />
                 <Toggle label="Translate messages" description="Auto-translate messages in other languages" value={settings.translate_messages} onChange={(v) => update("translate_messages", v)} />
                 <Toggle label="Auto-detect language" description="Detect the language of incoming messages" value={settings.auto_detect_language} onChange={(v) => update("auto_detect_language", v)} />
               </>
@@ -785,9 +1021,70 @@ export function SettingsClient({ user, boxes }: SettingsClientProps) {
                 </p>
 
                 <SectionHeader title="Devices" />
-                <TextInput label="Default microphone" value={settings.default_mic} onChange={(v) => update("default_mic", v)} placeholder="System default" />
-                <TextInput label="Default speaker" value={settings.default_speaker} onChange={(v) => update("default_speaker", v)} placeholder="System default" />
-                <TextInput label="Default camera" value={settings.default_camera} onChange={(v) => update("default_camera", v)} placeholder="System default" />
+                <TextInput label="Default microphone" value={settings.default_mic} onChange={(v) => debouncedUpdate("default_mic", v)} placeholder="System default" />
+                <TextInput label="Default speaker" value={settings.default_speaker} onChange={(v) => debouncedUpdate("default_speaker", v)} placeholder="System default" />
+                <TextInput label="Default camera" value={settings.default_camera} onChange={(v) => debouncedUpdate("default_camera", v)} placeholder="System default" />
+
+                <SectionDivider />
+                <SectionHeader title="Test devices" />
+
+                {/* Mic test */}
+                <div className="py-3">
+                  <div className="flex items-center gap-3 mb-2">
+                    <button
+                      onClick={micTesting ? stopMicTest : startMicTest}
+                      className={`flex h-9 items-center gap-2 rounded-[8px] px-4 text-[13px] font-medium transition-colors ${
+                        micTesting
+                          ? "bg-[#2a0f14] text-[#de1135] hover:bg-[#3a1520]"
+                          : "bg-[#1a1a1a] text-white hover:bg-[#252525]"
+                      }`}
+                    >
+                      {micTesting ? "Stop microphone" : "Test microphone"}
+                    </button>
+                  </div>
+                  {micTesting && (
+                    <div className="flex items-center gap-3">
+                      <div className="h-3 flex-1 overflow-hidden rounded-full bg-[#1a1a1a]">
+                        <div
+                          className="h-full rounded-full transition-all duration-75"
+                          style={{
+                            width: `${micLevel}%`,
+                            backgroundColor: micLevel > 70 ? "#de1135" : micLevel > 40 ? "#f59e0b" : "#22c55e",
+                          }}
+                        />
+                      </div>
+                      <span className="w-8 text-right text-[12px] text-[#555]">{micLevel}%</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Camera test */}
+                <div className="py-3">
+                  <div className="flex items-center gap-3 mb-2">
+                    <button
+                      onClick={cameraTesting ? stopCameraTest : startCameraTest}
+                      className={`flex h-9 items-center gap-2 rounded-[8px] px-4 text-[13px] font-medium transition-colors ${
+                        cameraTesting
+                          ? "bg-[#2a0f14] text-[#de1135] hover:bg-[#3a1520]"
+                          : "bg-[#1a1a1a] text-white hover:bg-[#252525]"
+                      }`}
+                    >
+                      {cameraTesting ? "Stop camera" : "Test camera"}
+                    </button>
+                  </div>
+                  {cameraTesting && (
+                    <div className="overflow-hidden rounded-[8px] border border-[#333]" style={{ width: 240, height: 180 }}>
+                      <video
+                        ref={videoPreviewRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="h-full w-full object-cover"
+                        style={{ transform: settings.camera_mirror ? "scaleX(-1)" : undefined }}
+                      />
+                    </div>
+                  )}
+                </div>
 
                 <SectionDivider />
                 <SectionHeader title="Audio" />
@@ -857,7 +1154,7 @@ export function SettingsClient({ user, boxes }: SettingsClientProps) {
 
                 <SectionDivider />
                 <SectionHeader title="Custom CSS" />
-                <TextArea label="Custom CSS" description="Inject custom CSS styles (advanced users only)" value={settings.custom_css} onChange={(v) => update("custom_css", v)} placeholder=".my-class { color: red; }" rows={5} />
+                <TextArea label="Custom CSS" description="Inject custom CSS styles (advanced users only)" value={settings.custom_css} onChange={(v) => debouncedUpdate("custom_css", v)} placeholder=".my-class { color: red; }" rows={5} />
               </>
             )}
 

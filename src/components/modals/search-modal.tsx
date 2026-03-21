@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { SearchIcon as Search, XIcon as X, HashIcon as Hash, CommentDiscussionIcon as MessageSquare, SparklesFillIcon as Sparkles, ArrowRightIcon as ArrowRight } from "@primer/octicons-react";
+import { SearchIcon as Search, XIcon as X, HashIcon as Hash, CommentDiscussionIcon as MessageSquare, SparklesFillIcon as Sparkles, ArrowRightIcon as ArrowRight, ClockIcon as Clock } from "@primer/octicons-react";
 import { Markdown } from "@/components/ui/markdown";
 import { useRouter } from "next/navigation";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -101,6 +101,33 @@ function highlightMatch(text: string, query: string) {
   );
 }
 
+const RECENT_SEARCHES_KEY = "cb_recent_searches";
+const MAX_RECENT_SEARCHES = 5;
+
+function getRecentSearches(): string[] {
+  try {
+    const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentSearch(query: string) {
+  const trimmed = query.trim();
+  if (!trimmed) return;
+  const existing = getRecentSearches();
+  const filtered = existing.filter((s) => s !== trimmed);
+  const updated = [trimmed, ...filtered].slice(0, MAX_RECENT_SEARCHES);
+  localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+}
+
+function clearRecentSearches() {
+  localStorage.removeItem(RECENT_SEARCHES_KEY);
+}
+
 function truncateAround(text: string, query: string, maxLen = 120) {
   const firstWord = query.trim().split(/\s+/)[0]?.toLowerCase();
   if (!firstWord || text.length <= maxLen) return text;
@@ -128,6 +155,9 @@ export function SearchModal({ open, onClose, boxShortId, boxId }: SearchModalPro
   const [aiSources, setAiSources] = useState<AskSource[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
 
+  // Recent searches
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+
   // Active filters parsed from query
   const [activeFilters, setActiveFilters] = useState<ParsedQuery>({ text: "", from: null, in: null, before: null, has: null });
 
@@ -141,6 +171,7 @@ export function SearchModal({ open, onClose, boxShortId, boxId }: SearchModalPro
       setAiSources([]);
       setMode("search");
       setActiveFilters({ text: "", from: null, in: null, before: null, has: null });
+      setRecentSearches(getRecentSearches());
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
@@ -222,6 +253,8 @@ export function SearchModal({ open, onClose, boxShortId, boxId }: SearchModalPro
   }
 
   function navigateToResult(result: SearchResult) {
+    saveRecentSearch(query);
+    setRecentSearches(getRecentSearches());
     onClose();
     if (result.channel_id && result.channel_short_id && result.box_short_id) {
       router.push(`/box/${result.box_short_id}/c/${result.channel_short_id}`);
@@ -239,9 +272,14 @@ export function SearchModal({ open, onClose, boxShortId, boxId }: SearchModalPro
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setSelectedIdx((prev) => Math.max(prev - 1, 0));
-      } else if (e.key === "Enter" && results[selectedIdx]) {
+      } else if (e.key === "Enter") {
         e.preventDefault();
-        navigateToResult(results[selectedIdx]);
+        if (results[selectedIdx]) {
+          navigateToResult(results[selectedIdx]);
+        } else if (query.trim().length >= 2) {
+          saveRecentSearch(query);
+          setRecentSearches(getRecentSearches());
+        }
       }
     } else if (mode === "ask") {
       if (e.key === "Enter") {
@@ -403,8 +441,59 @@ export function SearchModal({ open, onClose, boxShortId, boxId }: SearchModalPro
               )}
 
               {query.trim().length < 2 && !hasActiveFilters && (
-                <div className="px-4 py-6 text-center">
-                  <p className="text-[13px] text-[#555]">
+                <div className="px-4 py-6">
+                  {/* Recent searches */}
+                  {recentSearches.length > 0 && (
+                    <div className="mb-4">
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#444]">
+                          Recent searches
+                        </span>
+                        <button
+                          onClick={() => {
+                            clearRecentSearches();
+                            setRecentSearches([]);
+                          }}
+                          className="text-[11px] text-[#444] transition-colors hover:text-[#888]"
+                        >
+                          Clear history
+                        </button>
+                      </div>
+                      <div className="space-y-0.5">
+                        {recentSearches.map((term) => (
+                          <div
+                            key={term}
+                            className="group flex items-center gap-2.5 rounded-[6px] px-2 py-1.5 transition-colors hover:bg-[#1a1a1a]"
+                          >
+                            <Clock className="h-3.5 w-3.5 shrink-0 text-[#444]" />
+                            <button
+                              onClick={() => {
+                                setQuery(term);
+                                doSearch(term);
+                                inputRef.current?.focus();
+                              }}
+                              className="min-w-0 flex-1 truncate text-left text-[13px] text-[#888] transition-colors hover:text-white"
+                            >
+                              {term}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const updated = recentSearches.filter((s) => s !== term);
+                                setRecentSearches(updated);
+                                localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+                              }}
+                              className="flex h-4 w-4 shrink-0 items-center justify-center rounded text-[#333] opacity-0 transition-all hover:text-[#888] group-hover:opacity-100"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-center text-[13px] text-[#555]">
                     Type at least 2 characters to search
                   </p>
                   <div className="mt-4 flex flex-wrap justify-center gap-2">

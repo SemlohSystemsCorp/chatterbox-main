@@ -81,7 +81,7 @@ export async function getBoxByShortId(supabase: Awaited<ReturnType<typeof create
 export async function getBoxChannels(supabase: Awaited<ReturnType<typeof createClient>>, boxId: string) {
   const { data: channels } = await supabase
     .from("channels")
-    .select("id, short_id, name, description, is_private, is_archived, created_at")
+    .select("id, short_id, name, description, is_private, is_archived, created_at, updated_at")
     .eq("box_id", boxId)
     .eq("is_archived", false)
     .order("created_at", { ascending: true });
@@ -291,6 +291,51 @@ export async function getUnreadCountsForUser(
     }
     counts[channelId] = (recentMessages ?? []).filter(
       (m) => m.channel_id === channelId && m.created_at > lastRead
+    ).length;
+  }
+
+  return counts;
+}
+
+export async function getUnreadCountsForConversations(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  conversationIds: string[]
+) {
+  if (conversationIds.length === 0) return {} as Record<string, number>;
+
+  const { data: cursors } = await supabase
+    .from("read_cursors")
+    .select("conversation_id, last_read_at")
+    .eq("user_id", userId)
+    .in("conversation_id", conversationIds);
+
+  const cursorMap = new Map(
+    cursors?.map((c) => [c.conversation_id, c.last_read_at]) ?? []
+  );
+
+  const convoWithCursors = conversationIds.filter((id) => cursorMap.has(id));
+
+  if (convoWithCursors.length === 0) {
+    return Object.fromEntries(conversationIds.map((id) => [id, 0]));
+  }
+
+  const oldestCursor = [...cursorMap.values()].sort()[0];
+  const { data: recentMessages } = await supabase
+    .from("messages")
+    .select("conversation_id, created_at")
+    .in("conversation_id", convoWithCursors)
+    .gt("created_at", oldestCursor);
+
+  const counts: Record<string, number> = {};
+  for (const convoId of conversationIds) {
+    const lastRead = cursorMap.get(convoId);
+    if (!lastRead) {
+      counts[convoId] = 0;
+      continue;
+    }
+    counts[convoId] = (recentMessages ?? []).filter(
+      (m) => m.conversation_id === convoId && m.created_at > lastRead
     ).length;
   }
 

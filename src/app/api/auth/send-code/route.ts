@@ -28,6 +28,22 @@ export async function POST(request: Request) {
       );
     }
 
+    // For signup: check if an account with this email already exists
+    if (type === "email_verification") {
+      const { data: existingProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("email", email.trim().toLowerCase())
+        .maybeSingle();
+
+      if (existingProfile) {
+        return NextResponse.json(
+          { error: "An account with this email already exists. Try logging in instead." },
+          { status: 409 }
+        );
+      }
+    }
+
     // Rate limit: max 3 codes per email in the last 10 minutes
     const { data: recentCodes } = await supabaseAdmin
       .from("verification_codes")

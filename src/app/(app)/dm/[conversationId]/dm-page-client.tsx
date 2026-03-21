@@ -5,11 +5,7 @@ import { ChevronDownIcon as ChevronDown, XIcon as X, CommentDiscussionIcon as Me
 import { Tooltip } from "@/components/ui/tooltip";
 import { Spinner } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
-import { CreateChannelModal } from "@/components/modals/create-channel-modal";
-import { InviteModal } from "@/components/modals/invite-modal";
-import { GroupDmModal } from "@/components/modals/group-dm-modal";
-import { SearchModal } from "@/components/modals/search-modal";
-import { DmInfoModal } from "@/components/modals/dm-info-modal";
+import dynamic from "next/dynamic";
 import { useScheduledMessageWatcher } from "@/hooks/use-scheduled-message-watcher";
 import { ChatSidebar, type SidebarCall, type SidebarConversation } from "@/components/chat/chat-sidebar";
 import { MessageComposer } from "@/components/chat/message-composer";
@@ -18,14 +14,13 @@ import {
   MessageReactions,
   HoverActions,
   EditBox,
-  ThreadReplies,
+  ThreadIndicator,
   SystemMessage,
   parseSystemMessage,
   type MessageCallbacks,
 } from "@/components/chat/message-components";
 import { createClient } from "@/lib/supabase/client";
 import { parseSlashCommand, executeCommand } from "@/lib/slash-commands";
-import { CreatePollModal } from "@/components/modals/create-poll-modal";
 import { MemberProfileCard } from "@/components/chat/member-profile-card";
 import { TodosPanel } from "@/components/saved-messages/todos-panel";
 import { ProfilePanel } from "@/components/saved-messages/profile-panel";
@@ -34,10 +29,16 @@ import { usePresence } from "@/hooks/use-presence";
 import { useTyping } from "@/hooks/use-typing";
 import { useContactNames } from "@/hooks/use-contact-names";
 import { useDraft } from "@/hooks/use-draft";
-import {
-  MediaPreviewModal,
-  type MediaType,
-} from "@/components/modals/media-preview-modal";
+import type { MediaType } from "@/components/modals/media-preview-modal";
+
+// ── Lazy-loaded modals ──
+const CreateChannelModal = dynamic(() => import("@/components/modals/create-channel-modal").then(m => ({ default: m.CreateChannelModal })), { ssr: false });
+const InviteModal = dynamic(() => import("@/components/modals/invite-modal").then(m => ({ default: m.InviteModal })), { ssr: false });
+const GroupDmModal = dynamic(() => import("@/components/modals/group-dm-modal").then(m => ({ default: m.GroupDmModal })), { ssr: false });
+const SearchModal = dynamic(() => import("@/components/modals/search-modal").then(m => ({ default: m.SearchModal })), { ssr: false });
+const DmInfoModal = dynamic(() => import("@/components/modals/dm-info-modal").then(m => ({ default: m.DmInfoModal })), { ssr: false });
+const CreatePollModal = dynamic(() => import("@/components/modals/create-poll-modal").then(m => ({ default: m.CreatePollModal })), { ssr: false });
+const MediaPreviewModal = dynamic(() => import("@/components/modals/media-preview-modal").then(m => ({ default: m.MediaPreviewModal })), { ssr: false });
 import {
   formatTime,
   formatDate,
@@ -1685,7 +1686,7 @@ export function DmPageClient({
                     </div>
 
                     {/* Nested replies */}
-                    <ThreadReplies parentId={msg.id} depth={1} childrenMap={childrenMap} cb={msgCallbacks} hoveredMsgId={hoveredMsgId} />
+                    <ThreadIndicator parentId={msg.id} childrenMap={childrenMap} cb={msgCallbacks} parentMessage={msg} />
 
                     {showSeen && (
                       <div className="flex gap-3 px-2 pb-1">

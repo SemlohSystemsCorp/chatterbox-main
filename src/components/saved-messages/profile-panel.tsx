@@ -20,15 +20,17 @@ export function ProfilePanel({ user }: ProfilePanelProps) {
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl);
   const [uploading, setUploading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      alert("Image must be under 5MB");
+      setUploadError("Image must be under 5MB");
       return;
     }
+    setUploadError(null);
     setUploading(true);
     try {
       const form = new FormData();
@@ -37,6 +39,8 @@ export function ProfilePanel({ user }: ProfilePanelProps) {
       if (res.ok) {
         const data = await res.json();
         setAvatarUrl(data.avatar_url);
+      } else {
+        setUploadError("Failed to upload avatar. Please try again.");
       }
     } finally {
       setUploading(false);
@@ -91,6 +95,14 @@ export function ProfilePanel({ user }: ProfilePanelProps) {
                 {initials}
               </div>
             )}
+            {uploading && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
+                <svg className="h-5 w-5 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              </div>
+            )}
             <Tooltip label="Upload avatar">
               <button
                 onClick={() => fileRef.current?.click()}
@@ -122,6 +134,9 @@ export function ProfilePanel({ user }: ProfilePanelProps) {
             )}
           </div>
         </div>
+        {uploadError && (
+          <p className="mt-2 text-[12px] text-[#de1135]">{uploadError}</p>
+        )}
 
         {/* Fields */}
         <div className="mt-8 space-y-4">

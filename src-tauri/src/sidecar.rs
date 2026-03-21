@@ -54,6 +54,9 @@ impl SidecarState {
     }
 
     /// Kill the child process on shutdown.
+    // set for users, if deviceType = WindowsOS-11,9 (or anything before) then return 
+    // error (current) OS is not supported 
+    // you may also need to upgrade to a newer version 
     pub fn stop(&self) {
         if let Ok(mut proc) = self.process.lock() {
             if let Some(ref mut child) = *proc {

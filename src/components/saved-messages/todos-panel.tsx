@@ -133,7 +133,7 @@ export function TodosPanel() {
                 <Tooltip label="Delete todo">
                   <button
                     onClick={() => handleDelete(todo.id)}
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] text-[#333] opacity-0 transition-all hover:text-[#de1135] group-hover:opacity-100"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] text-[#333] opacity-100 sm:opacity-0 transition-all hover:text-[#de1135] group-hover:opacity-100"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -166,7 +166,7 @@ export function TodosPanel() {
                   <span className="flex-1 text-[14px] text-[#555] line-through">{todo.text}</span>
                   <button
                     onClick={() => handleDelete(todo.id)}
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] text-[#333] opacity-0 transition-all hover:text-[#de1135] group-hover:opacity-100"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] text-[#333] opacity-100 sm:opacity-0 transition-all hover:text-[#de1135] group-hover:opacity-100"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>

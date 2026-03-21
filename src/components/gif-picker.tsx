@@ -202,7 +202,18 @@ export function GifPicker({ onSelect, children }: GifPickerProps) {
               )}
 
               {/* Grid */}
-              <div className="h-[300px] overflow-y-auto p-1">
+              <div className="relative h-[300px] overflow-y-auto p-1">
+                {query !== debouncedQuery && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#111]/80">
+                    <div className="flex items-center gap-2 text-[12px] text-[#888]">
+                      <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Searching...
+                    </div>
+                  </div>
+                )}
                 <Grid
                   key={debouncedQuery}
                   width={364}

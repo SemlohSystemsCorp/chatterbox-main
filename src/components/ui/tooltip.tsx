@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, type ReactNode } from "react";
+import { useState, useRef, useEffect, useId, type ReactNode } from "react";
 
 interface TooltipProps {
   label: string;
@@ -17,6 +17,7 @@ export function Tooltip({ label, children, side = "bottom", delay = 0 }: Tooltip
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const tooltipId = useId();
 
   function show() {
     timerRef.current = setTimeout(() => setVisible(true), delay);
@@ -76,11 +77,13 @@ export function Tooltip({ label, children, side = "bottom", delay = 0 }: Tooltip
       onFocus={show}
       onBlur={hide}
       className="inline-flex"
+      aria-describedby={visible ? tooltipId : undefined}
     >
       {children}
       {visible && (
         <div
           ref={tooltipRef}
+          id={tooltipId}
           role="tooltip"
           className="pointer-events-none fixed z-[9999] animate-[tooltip-in_100ms_ease-out] rounded-[6px] bg-[#1a1a1a] px-2.5 py-1.5 text-[12px] font-medium text-white shadow-[0_4px_12px_rgba(0,0,0,0.4)] border border-[#2a2a2a]"
           style={coords ? { top: coords.top, left: coords.left } : { opacity: 0 }}

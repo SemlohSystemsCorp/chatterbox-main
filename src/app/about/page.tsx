@@ -247,12 +247,12 @@ export default function AboutPage() {
                 Try Chatterbox
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
-              <a
-                href="#"
+              <Link
+                href="/careers"
                 className="inline-flex h-11 items-center rounded-xl border border-white/[0.08] bg-white/[0.03] px-6 text-[14px] font-medium text-[#ccc] transition-all hover:border-white/[0.12] hover:bg-white/[0.06]"
               >
                 View open roles
-              </a>
+              </Link>
             </div>
           </div>
         </section>

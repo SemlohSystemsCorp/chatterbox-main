@@ -26,15 +26,21 @@ const variantMap: Record<string, string> = {
 };
 
 export function Spinner({ size = "md", className, label, center, variant = "light" }: SpinnerProps) {
+  const loadingText = label || "Loading";
+
   const spinner = (
     <div
+      role="status"
+      aria-label={loadingText}
       className={cn(
         "animate-spin rounded-full",
         variantMap[variant],
         sizeMap[size],
         className
       )}
-    />
+    >
+      <span className="sr-only">{loadingText}</span>
+    </div>
   );
 
   if (label) {

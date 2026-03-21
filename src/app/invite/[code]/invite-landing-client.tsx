@@ -65,7 +65,7 @@ export function InviteLandingClient({
       {/* Top bar */}
       <div className="flex h-14 shrink-0 items-center justify-center border-b border-[#1a1a1a] px-6">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-white">
+          <div className="logo-glass flex h-7 w-7 items-center justify-center rounded-md bg-white">
             <MessageSquare className="h-4 w-4 text-black" />
           </div>
           <span className="text-[15px] font-bold text-white">Chatterbox</span>
@@ -158,10 +158,10 @@ export function InviteLandingClient({
 
           {/* Actions */}
           <div className="mt-6 space-y-3">
-            <Link href={`/login?redirect=/join?code=${code}`}>
+            <Link href={`/login?redirect=${encodeURIComponent(`/join?code=${code}`)}`}>
               <Button className="w-full">Sign in to join</Button>
             </Link>
-            <Link href={`/signup?redirect=/join?code=${code}`}>
+            <Link href={`/signup?redirect=${encodeURIComponent(`/join?code=${code}`)}`}>
               <Button variant="secondary" className="w-full">
                 Create an account
               </Button>

@@ -153,6 +153,21 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Check pin limit (max 50 per channel/conversation)
+  const countCol = channel_id ? "channel_id" : "conversation_id";
+  const countId = channel_id || conversation_id;
+  const { count } = await supabase
+    .from("pinned_messages")
+    .select("id", { count: "exact", head: true })
+    .eq(countCol, countId);
+
+  if (count && count >= 50) {
+    return NextResponse.json(
+      { error: "Maximum of 50 pinned messages reached. Unpin some messages first." },
+      { status: 400 }
+    );
+  }
+
   const { data: pin, error } = await supabase
     .from("pinned_messages")
     .insert({
