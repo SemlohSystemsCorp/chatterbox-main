@@ -87,7 +87,7 @@ export function playNotificationSound() {
 }
 
 /** Check if Do Not Disturb is active based on user settings. */
-function isDndActive(): boolean {
+export function isDndActive(): boolean {
   const s = useSettingsStore.getState();
   if (s.mute_all_sounds) return true;
   if (!s.notification_schedule_enabled) return false;

@@ -25,6 +25,14 @@ describe("SLASH_COMMANDS", () => {
     expect(names).toContain("invite");
     expect(names).toContain("date");
     expect(names).toContain("poll");
+    expect(names).toContain("remind");
+    expect(names).toContain("todo");
+    expect(names).toContain("mute");
+    expect(names).toContain("unmute");
+    expect(names).toContain("nick");
+    expect(names).toContain("dm");
+    expect(names).toContain("code");
+    expect(names).toContain("timestamp");
   });
 
   it("each command has name, description, and usage", () => {
@@ -269,6 +277,148 @@ describe("executeCommand", () => {
       expect(executeCommand("poll", "", userName)).toEqual({
         type: "open_poll",
       });
+    });
+  });
+
+  describe("remind", () => {
+    it("returns null for empty args", () => {
+      expect(executeCommand("remind", "", userName)).toBeNull();
+    });
+
+    it("shows usage for invalid format", () => {
+      const result = executeCommand("remind", "tomorrow do stuff", userName);
+      expect(result?.type).toBe("message");
+      expect(result?.content).toContain("Usage");
+    });
+
+    it("parses time and message correctly", () => {
+      const result = executeCommand("remind", "5m Take out the trash", userName);
+      expect(result?.type).toBe("message");
+      expect(result?.content).toContain("⏰");
+      expect(result?.content).toContain("5 minute");
+      expect(result?.content).toContain("Take out the trash");
+    });
+
+    it("handles singular time unit", () => {
+      const result = executeCommand("remind", "1h Check email", userName);
+      expect(result?.content).toContain("1 hour");
+      expect(result?.content).not.toContain("hours");
+    });
+
+    it("handles plural time unit", () => {
+      const result = executeCommand("remind", "3d Review PR", userName);
+      expect(result?.content).toContain("3 days");
+    });
+
+    it("handles seconds", () => {
+      const result = executeCommand("remind", "30s Quick check", userName);
+      expect(result?.content).toContain("30 seconds");
+    });
+  });
+
+  describe("todo", () => {
+    it("returns null for empty args", () => {
+      expect(executeCommand("todo", "", userName)).toBeNull();
+    });
+
+    it("creates a todo message", () => {
+      const result = executeCommand("todo", "Buy groceries", userName);
+      expect(result?.type).toBe("message");
+      expect(result?.content).toContain("☐");
+      expect(result?.content).toContain("Buy groceries");
+    });
+  });
+
+  describe("mute", () => {
+    it("returns mute type", () => {
+      const result = executeCommand("mute", "", userName);
+      expect(result?.type).toBe("mute");
+    });
+  });
+
+  describe("unmute", () => {
+    it("returns unmute type", () => {
+      const result = executeCommand("unmute", "", userName);
+      expect(result?.type).toBe("unmute");
+    });
+  });
+
+  describe("nick", () => {
+    it("returns null for empty args", () => {
+      expect(executeCommand("nick", "", userName)).toBeNull();
+    });
+
+    it("shows usage for missing nickname", () => {
+      const result = executeCommand("nick", "john", userName);
+      expect(result?.type).toBe("message");
+      expect(result?.content).toContain("Usage");
+    });
+
+    it("parses @user and nickname", () => {
+      const result = executeCommand("nick", "@john Cool Guy", userName);
+      expect(result?.type).toBe("set_nick");
+      expect(result?.targetUser).toBe("john");
+      expect(result?.nickname).toBe("Cool Guy");
+    });
+  });
+
+  describe("dm", () => {
+    it("returns null for empty args", () => {
+      expect(executeCommand("dm", "", userName)).toBeNull();
+    });
+
+    it("shows usage for missing @user", () => {
+      const result = executeCommand("dm", "just a message", userName);
+      expect(result?.type).toBe("message");
+      expect(result?.content).toContain("Usage");
+    });
+
+    it("parses @user and message", () => {
+      const result = executeCommand("dm", "@jane Hey there!", userName);
+      expect(result?.type).toBe("open_dm");
+      expect(result?.targetUser).toBe("jane");
+      expect(result?.content).toBe("Hey there!");
+    });
+
+    it("parses @user without message", () => {
+      const result = executeCommand("dm", "@jane", userName);
+      expect(result?.type).toBe("open_dm");
+      expect(result?.targetUser).toBe("jane");
+      expect(result?.content).toBeUndefined();
+    });
+  });
+
+  describe("code", () => {
+    it("returns null for empty args", () => {
+      expect(executeCommand("code", "", userName)).toBeNull();
+    });
+
+    it("wraps code with language in fenced block", () => {
+      const result = executeCommand("code", "js console.log('hi')", userName);
+      expect(result?.type).toBe("message");
+      expect(result?.content).toBe("```js\nconsole.log('hi')\n```");
+    });
+
+    it("treats first word as language when followed by code", () => {
+      const result = executeCommand("code", "hello world", userName);
+      expect(result?.type).toBe("message");
+      expect(result?.content).toBe("```hello\nworld\n```");
+    });
+
+    it("wraps single word in plain block", () => {
+      const result = executeCommand("code", "hello", userName);
+      expect(result?.type).toBe("message");
+      expect(result?.content).toBe("```\nhello\n```");
+    });
+  });
+
+  describe("timestamp", () => {
+    it("returns a message with ISO timestamp", () => {
+      const result = executeCommand("timestamp", "", userName);
+      expect(result?.type).toBe("message");
+      expect(result?.content).toContain("`");
+      // ISO string contains a T separator
+      expect(result?.content).toMatch(/\d{4}-\d{2}-\d{2}T/);
     });
   });
 
